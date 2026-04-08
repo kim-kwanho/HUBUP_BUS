@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# env (비밀값) — 깃허브에 올리면 안 되는 것
+.env
+.env.local
+.env.*.local
+# 로컬만 쓰는 환경 파일(실수 방지)
+.env.development.local
+.env.production.local
+.env.test.local
+
+# next
+.next/
+out/

@@ -1,0 +1,4 @@
+-- (선택) `012_hubup_bus_admin.sql` 실행 후 예전 `010` 테이블을 더 이상 쓰지 않을 때만
+-- 아래 주석을 해제해 이중 저장을 제거할 수 있습니다.
+--
+-- DROP TABLE IF EXISTS public.hubup_area_allowed_roles;
