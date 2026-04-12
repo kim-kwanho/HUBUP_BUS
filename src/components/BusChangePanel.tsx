@@ -2,6 +2,15 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import styled from '@emotion/styled';
 
 type SlotOpt = { value: string; label: string };
+const HUBUP_NAVY = '#0f172d';
+const HUBUP_NAVY_SOFT = '#16213d';
+const HUBUP_NAVY_LINE = 'rgba(148, 163, 184, 0.16)';
+const HUBUP_TEXT = '#dce6f5';
+const HUBUP_TEXT_SOFT = 'rgba(220, 230, 245, 0.76)';
+const HUBUP_BLUE = '#35548b';
+const HUBUP_BLUE_DEEP = '#243f74';
+const HUBUP_POSTER_NAVY = '#2f4f86';
+const HUBUP_POSTER_NAVY_DEEP = '#233d6c';
 
 type PendingRow = {
   id: string;
@@ -27,7 +36,7 @@ const TicketLead = styled.p`
   margin: 0 0 12px;
   font-size: 14px;
   line-height: 1.65;
-  color: #6b7280;
+  color: ${HUBUP_TEXT_SOFT};
   font-weight: 500;
 `;
 
@@ -36,13 +45,14 @@ const TicketRoot = styled.section`
   margin-bottom: 16px;
   border-radius: 18px;
   overflow: hidden;
+  border: 1px solid ${HUBUP_NAVY_LINE};
   box-shadow:
-    0 2px 4px rgba(15, 80, 40, 0.06),
-    0 12px 32px rgba(22, 101, 52, 0.12);
+    0 8px 20px rgba(2, 6, 23, 0.2),
+    0 18px 40px rgba(2, 6, 23, 0.22);
 `;
 
 const TicketHeader = styled.div`
-  background: linear-gradient(125deg, #14532d 0%, #166534 38%, #15803d 72%, #16a34a 100%);
+  background: linear-gradient(135deg, ${HUBUP_POSTER_NAVY} 0%, ${HUBUP_POSTER_NAVY_DEEP} 100%);
   color: #fff;
   padding: 18px 20px 16px;
   text-align: center;
@@ -77,7 +87,7 @@ const TicketTitle = styled.h3`
 `;
 
 const TicketBody = styled.div`
-  background: linear-gradient(180deg, #ffffff 0%, #f7fef9 48%, #ecfdf5 100%);
+  background: linear-gradient(180deg, rgba(47, 79, 134, 0.1) 0%, #ffffff 28%);
   padding: 20px 16px 18px;
 `;
 
@@ -102,7 +112,7 @@ const TicketHalfBadge = styled.div`
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #fff;
-  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  background: linear-gradient(180deg, ${HUBUP_BLUE} 0%, ${HUBUP_BLUE_DEEP} 100%);
   padding: 5px 12px;
   border-radius: 999px;
   margin-bottom: 10px;
@@ -112,7 +122,7 @@ const TicketHalfBadge = styled.div`
 const TicketHalfTime = styled.div`
   font-size: clamp(1.25rem, 4.5vw, 1.65rem);
   font-weight: 800;
-  color: #14532d;
+  color: #203454;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
   line-height: 1.2;
@@ -122,7 +132,7 @@ const TicketHalfTime = styled.div`
 const TicketHalfSub = styled.div`
   margin-top: 6px;
   font-size: 11px;
-  color: #6b7280;
+  color: #62718a;
   font-weight: 500;
 `;
 
@@ -147,8 +157,8 @@ const TicketMiddleColumn = styled.div`
     width: 2px;
     background: repeating-linear-gradient(
       180deg,
-      #86efac 0px,
-      #86efac 6px,
+      rgba(53, 84, 139, 0.7) 0px,
+      rgba(53, 84, 139, 0.7) 6px,
       transparent 6px,
       transparent 11px
     );
@@ -165,15 +175,15 @@ const TicketArrowCircle = styled.div`
   height: 46px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: linear-gradient(155deg, #ffffff 0%, #ecfdf5 55%, #d1fae5 100%);
-  border: 2px solid rgba(34, 197, 94, 0.65);
+  background: linear-gradient(155deg, #ffffff 0%, #eef3fb 100%);
+  border: 2px solid rgba(53, 84, 139, 0.56);
   box-shadow:
-    0 2px 10px rgba(22, 101, 52, 0.14),
+    0 2px 10px rgba(37, 54, 91, 0.14),
     inset 0 1px 0 rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #15803d;
+  color: ${HUBUP_BLUE};
 `;
 
 /** 출발 ↔ 복귀 왕복(양방향 화살표) */
@@ -184,8 +194,8 @@ function TicketArrowIcon() {
     <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
       <defs>
         <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#16a34a" />
-          <stop offset="100%" stopColor="#15803d" />
+          <stop offset="0%" stopColor="#6f8fc8" />
+          <stop offset="100%" stopColor="#35548b" />
         </linearGradient>
       </defs>
       <path
@@ -198,7 +208,7 @@ function TicketArrowIcon() {
 
 const TicketPerf = styled.div`
   padding: 10px 0 6px;
-  background: #f0fdf4;
+  background: #f4f7fc;
 
   &::before {
     content: '';
@@ -207,8 +217,8 @@ const TicketPerf = styled.div`
     margin: 0 22px;
     background-image: repeating-linear-gradient(
       90deg,
-      #86efac 0px,
-      #86efac 7px,
+      rgba(53, 84, 139, 0.7) 0px,
+      rgba(53, 84, 139, 0.7) 7px,
       transparent 7px,
       transparent 13px
     );
@@ -216,7 +226,7 @@ const TicketPerf = styled.div`
 `;
 
 const TicketStub = styled.div`
-  background: linear-gradient(180deg, #f0fdf4 0%, #dcfce7 100%);
+  background: linear-gradient(180deg, #f7f9fd 0%, #edf2fb 100%);
   padding: 14px 18px 16px;
 `;
 
@@ -224,7 +234,7 @@ const TicketStubText = styled.p`
   margin: 0;
   font-size: 12.5px;
   line-height: 1.55;
-  color: #166534;
+  color: #203454;
   font-weight: 600;
 `;
 
@@ -233,7 +243,7 @@ const TicketStubHint = styled.span`
   margin-top: 6px;
   font-size: 11.5px;
   font-weight: 500;
-  color: #15803d;
+  color: ${HUBUP_BLUE};
   opacity: 0.92;
 `;
 
@@ -241,7 +251,7 @@ const TicketStubMuted = styled.p`
   margin: 0;
   font-size: 13px;
   line-height: 1.55;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 500;
   text-align: center;
 `;
@@ -254,7 +264,7 @@ const IntroBlock = styled.div`
 const IntroParagraph = styled.p`
   margin: 0 0 8px;
   font-size: 14px;
-  color: #6b7280;
+  color: #5a687c;
   line-height: 1.65;
 
   &:last-child {
@@ -267,7 +277,7 @@ const Label = styled.label`
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: #243b63;
   margin-bottom: 14px;
 `;
 
@@ -275,15 +285,15 @@ const Select = styled.select`
   width: 100%;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  color: #111827;
+  border: 1px solid rgba(53, 84, 139, 0.18);
+  background: #ffffff;
+  color: #18253f;
   outline: none;
   cursor: pointer;
 
   &:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+    border-color: ${HUBUP_BLUE};
+    box-shadow: 0 0 0 3px rgba(53, 84, 139, 0.18);
   }
 `;
 
@@ -292,22 +302,26 @@ const TextArea = styled.textarea`
   min-height: 120px;
   padding: 12px;
   border-radius: 10px;
-  border: 1px solid #d1d5db;
-  background: #fff;
-  color: #111827;
+  border: 1px solid rgba(53, 84, 139, 0.18);
+  background: #ffffff;
+  color: #18253f;
   outline: none;
   resize: vertical;
 
   &:focus {
-    border-color: #16a34a;
-    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+    border-color: ${HUBUP_BLUE};
+    box-shadow: 0 0 0 3px rgba(53, 84, 139, 0.18);
+  }
+
+  &::placeholder {
+    color: rgba(100, 116, 139, 0.72);
   }
 `;
 
 const Disclaimer = styled.p`
   margin: 8px 0 16px;
   font-size: 12px;
-  color: #9ca3af;
+  color: #6b7280;
   line-height: 1.5;
 `;
 
@@ -316,7 +330,7 @@ const SubmitBtn = styled.button`
   padding: 14px 18px;
   border-radius: 12px;
   border: none;
-  background: #16a34a;
+  background: linear-gradient(180deg, ${HUBUP_BLUE} 0%, ${HUBUP_BLUE_DEEP} 100%);
   color: #fff;
   font-size: 16px;
   font-weight: 800;
@@ -331,7 +345,7 @@ const SubmitBtn = styled.button`
 const Message = styled.p`
   margin: 0;
   font-size: 14px;
-  color: #6b7280;
+  color: #5a687c;
   line-height: 1.6;
 `;
 

@@ -21,7 +21,7 @@ export default function MyApp({ Component, pageProps: { session, ...pageProps } 
   return (
     <SessionProvider session={session}>
       <Head>
-        <title>HUBUP Q&A</title>
+        <title>HUBUP BUS</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Global styles={global} />

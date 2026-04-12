@@ -3,18 +3,20 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import styled from '@emotion/styled';
 import { useSession } from 'next-auth/react';
-import {
-  hubUpHasBusAccess,
-  hubUpHasInquiriesAccess,
-  hubUpHasOrgWideAdmin
-} from '@src/lib/hubup-permissions';
 
 const SIDEBAR_W = 260;
+const HUBUP_NAVY = '#0f172d';
+const HUBUP_NAVY_SOFT = '#16213d';
+const HUBUP_NAVY_DEEP = '#0a1020';
+const HUBUP_BLUE = '#35548b';
+const HUBUP_BLUE_SOFT = 'rgba(53, 84, 139, 0.22)';
 
 const Layout = styled.div`
   display: flex;
   min-height: 100vh;
-  background: #0b1020;
+  background:
+    radial-gradient(circle at top left, rgba(53, 84, 139, 0.1), transparent 28%),
+    linear-gradient(180deg, ${HUBUP_NAVY} 0%, ${HUBUP_NAVY_DEEP} 100%);
 `;
 
 const Sidebar = styled.aside`
@@ -24,8 +26,8 @@ const Sidebar = styled.aside`
   z-index: 40;
   width: ${SIDEBAR_W}px;
   height: 100vh;
-  background: rgba(15, 23, 42, 0.96);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 16, 32, 0.96);
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
   display: flex;
   flex-direction: column;
   padding: 20px 0 16px;
@@ -49,7 +51,7 @@ const LogoMark = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #22c55e, #15803d);
+  background: linear-gradient(135deg, ${HUBUP_BLUE} 0%, #243f74 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,17 +89,17 @@ const NavLink = styled.a<{ $active: boolean }>`
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: ${({ $active }) => ($active ? '#ecfdf5' : 'rgba(226, 232, 240, 0.88)')};
+  color: ${({ $active }) => ($active ? '#f3fbf7' : 'rgba(226, 232, 240, 0.88)')};
   background: ${({ $active }) =>
-    $active ? 'rgba(34, 197, 94, 0.22)' : 'transparent'};
+    $active ? HUBUP_BLUE_SOFT : 'transparent'};
   border: 1px solid
-    ${({ $active }) => ($active ? 'rgba(34, 197, 94, 0.35)' : 'transparent')};
+    ${({ $active }) => ($active ? 'rgba(53, 84, 139, 0.34)' : 'transparent')};
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 
   &:hover {
     background: ${({ $active }) =>
-      $active ? 'rgba(34, 197, 94, 0.26)' : 'rgba(255, 255, 255, 0.06)'};
+      $active ? 'rgba(53, 84, 139, 0.28)' : 'rgba(255, 255, 255, 0.06)'};
   }
 `;
 
@@ -120,6 +122,9 @@ const Main = styled.main`
   margin-left: ${SIDEBAR_W}px;
   min-width: 0;
   padding: 24px 20px 64px;
+  background:
+    linear-gradient(180deg, rgba(22, 33, 61, 0.2), transparent 120px),
+    transparent;
 
   @media (max-width: 900px) {
     margin-left: 0;
@@ -152,30 +157,15 @@ const TopLinks = styled.div`
   color: rgba(148, 163, 184, 0.95);
 
   a:hover {
-    color: #e2e8f0;
+    color: #f8fafc;
   }
 `;
 
 export const ADMIN_NAV = [
-  { href: '/admin', label: '대시보드', icon: '📊', perm: 'all' as const },
   {
     href: '/admin/bus-requests',
     label: '버스 변경 요청',
-    icon: '🚌',
-    perm: 'bus' as const
-  },
-  { href: '/admin/inquiries', label: '문의사항', icon: '✉️', perm: 'inquiries' as const },
-  {
-    href: '/admin/access',
-    label: '허브업 접근 권한',
-    icon: '🔐',
-    perm: 'org' as const
-  },
-  {
-    href: '/admin/users',
-    label: '회원·권한',
-    icon: '👥',
-    perm: 'org' as const
+    icon: '🚌'
   }
 ] as const;
 
@@ -190,18 +180,7 @@ export default function AdminShell({ title, children, variant = 'default' }: Pro
   const router = useRouter();
   const { data: session } = useSession();
   const path = router.pathname;
-  const roles = session?.user?.roles ?? [];
-  const profileStatus = session?.user?.profileStatus ?? undefined;
-  const hubupArea = session?.user?.hubupArea;
-  const isOrgAdmin = profileStatus === '관리자';
-
-  const navItems = ADMIN_NAV.filter((item) => {
-    if (item.perm === 'all') return true;
-    if (item.perm === 'org') return hubUpHasOrgWideAdmin(profileStatus);
-    if (item.perm === 'inquiries') return hubUpHasInquiriesAccess(roles, profileStatus, hubupArea);
-    if (item.perm === 'bus') return hubUpHasBusAccess(roles, profileStatus, hubupArea);
-    return false;
-  });
+  const navItems = ADMIN_NAV;
 
   return (
     <Layout>
@@ -209,14 +188,11 @@ export default function AdminShell({ title, children, variant = 'default' }: Pro
         <LogoBlock>
           <LogoMark aria-hidden>⚡</LogoMark>
           <LogoTitle>HUBUP Admin</LogoTitle>
-          <LogoSub>허브업 Q&amp;A · 운영</LogoSub>
+          <LogoSub>허브업 버스 운영</LogoSub>
         </LogoBlock>
         <Nav aria-label="관리자 메뉴">
           {navItems.map((item) => {
-            const active =
-              item.href === '/admin'
-                ? path === '/admin'
-                : path === item.href || path.startsWith(`${item.href}/`);
+            const active = path === item.href || path.startsWith(`${item.href}/`);
             return (
               <Link key={item.href} href={item.href} passHref legacyBehavior>
                 <NavLink $active={active}>
@@ -229,8 +205,6 @@ export default function AdminShell({ title, children, variant = 'default' }: Pro
         </Nav>
         <UserBox>
           {session?.user?.name || session?.user?.email || '관리자'}
-          {isOrgAdmin ? <span> · 기관 관리자</span> : null}
-          {roles.length > 0 ? <span> · 역할: {roles.join(', ')}</span> : null}
         </UserBox>
       </Sidebar>
       <Main>

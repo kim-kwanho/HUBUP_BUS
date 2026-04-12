@@ -4,15 +4,26 @@ import styled from '@emotion/styled';
 import { useRouter } from 'next/router';
 import BusChangePanel from '@src/components/BusChangePanel';
 import { useSsoUser } from '@src/hooks/useSsoUser';
+import { HUBUP_BUS_ONLY_MODE } from '@src/lib/hubup-bus-only-mode';
 import { HUBUP_INQUIRIES_ENABLED } from '@src/lib/hubup-inquiries-feature';
 
 type TabId = 'faq' | 'bus' | 'qa';
 
+const HUBUP_PRIMARY = '#35548b';
+const HUBUP_PRIMARY_DEEP = '#243f74';
+const HUBUP_POSTER_NAVY = '#2f4f86';
+const HUBUP_POSTER_NAVY_DEEP = '#233d6c';
+const HUBUP_BG = '#f5f7fb';
+const HUBUP_PANEL = '#ffffff';
+const HUBUP_PANEL_SOFT = '#f7f9fd';
+
 const Page = styled.main`
   min-height: 100vh;
-  padding: 40px 16px 72px;
-  background: #eef0f4;
-  color: #1a1d26;
+  padding: 44px 16px 72px;
+  background:
+    radial-gradient(circle at top, rgba(53, 84, 139, 0.1), transparent 30%),
+    linear-gradient(180deg, ${HUBUP_BG} 0%, #eef2f8 100%);
+  color: #1f2937;
 `;
 
 const Container = styled.div`
@@ -23,35 +34,43 @@ const Container = styled.div`
 
 const HeaderBlock = styled.header`
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 26px;
+  padding: 26px 22px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, ${HUBUP_POSTER_NAVY} 0%, ${HUBUP_POSTER_NAVY_DEEP} 100%);
+  box-shadow: 0 16px 36px rgba(35, 61, 108, 0.18);
 `;
 
 const MainTitle = styled.h1`
-  margin: 0 0 8px;
-  font-size: 22px;
+  margin: 0 0 10px;
+  font-size: clamp(1.8rem, 4vw, 2.25rem);
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #111827;
+  color: #ffffff;
 `;
 
 const SubTitle = styled.p`
   margin: 0;
   font-size: 15px;
-  color: #6b7280;
-  line-height: 1.5;
+  color: rgba(238, 244, 255, 0.88);
+  line-height: 1.65;
 `;
 
 const Panel = styled.div`
-  border-radius: 16px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
+  background: ${HUBUP_PANEL};
+  border: 1px solid rgba(53, 84, 139, 0.12);
+  box-shadow:
+    0 16px 36px rgba(37, 54, 91, 0.08),
+    0 2px 8px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 `;
 
 const TabBar = styled.div`
   display: flex;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 0 16px;
+  background: linear-gradient(180deg, #ffffff 0%, ${HUBUP_PANEL_SOFT} 100%);
+  border-bottom: 1px solid rgba(53, 84, 139, 0.12);
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
@@ -67,12 +86,12 @@ const TabButton = styled.button<{ $active: boolean }>`
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
-  color: ${(p) => (p.$active ? '#111827' : '#9ca3af')};
+  color: ${(p) => (p.$active ? '#18253f' : '#7b8794')};
   position: relative;
   transition: color 0.15s ease;
 
   &:hover {
-    color: ${(p) => (p.$active ? '#111827' : '#6b7280')};
+    color: ${(p) => (p.$active ? '#18253f' : '#4b5563')};
   }
 
   &::after {
@@ -83,7 +102,7 @@ const TabButton = styled.button<{ $active: boolean }>`
     bottom: 0;
     height: 3px;
     border-radius: 3px 3px 0 0;
-    background: ${(p) => (p.$active ? '#16a34a' : 'transparent')};
+    background: ${(p) => (p.$active ? HUBUP_PRIMARY : 'transparent')};
     transition: background 0.15s ease;
   }
 `;
@@ -99,8 +118,29 @@ const TabLabel = styled.span`
 `;
 
 const TabBody = styled.div`
-  padding: 24px 20px 28px;
+  padding: 28px 24px 32px;
   min-height: 200px;
+`;
+
+const SingleSectionHead = styled.div`
+  padding: 22px 24px 18px;
+  background: linear-gradient(180deg, #ffffff 0%, ${HUBUP_PANEL_SOFT} 100%);
+  border-bottom: 1px solid rgba(53, 84, 139, 0.12);
+`;
+
+const SingleSectionTitle = styled.h2`
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #18253f;
+  letter-spacing: -0.02em;
+`;
+
+const SingleSectionDesc = styled.p`
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5b6470;
 `;
 
 const QaIntro = styled.div`
@@ -311,10 +351,25 @@ const TABS_ALL: { id: TabId; label: string; icon: string }[] = [
   { id: 'bus', label: '버스 시간 변경', icon: '🚌' },
   { id: 'qa', label: '질문하기', icon: '✉️' }
 ];
-const TABS = HUBUP_INQUIRIES_ENABLED ? TABS_ALL : TABS_ALL.filter((t) => t.id !== 'qa');
+/**
+ * 메인 페이지에서는 FAQ/질문하기를 잠시 숨기고 버스 시간 변경만 노출합니다.
+ * 관련 코드는 유지합니다.
+ */
+const HOME_BUS_ONLY_MODE = true;
+
+const TABS = HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE
+  ? TABS_ALL.filter((t) => t.id === 'bus')
+  : HUBUP_INQUIRIES_ENABLED
+    ? TABS_ALL
+    : TABS_ALL.filter((t) => t.id !== 'qa');
 
 function parseTabFromHash(hash: string): TabId | null {
   const h = hash.replace(/^#/, '');
+  if (HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE) {
+    if (h === 'bus') return 'bus';
+    if (h === 'faq' || h === 'qa') return 'bus';
+    return null;
+  }
   if (h === 'faq' || h === 'bus') return h;
   if (h === 'qa') return HUBUP_INQUIRIES_ENABLED ? 'qa' : 'faq';
   return null;
@@ -323,9 +378,9 @@ function parseTabFromHash(hash: string): TabId | null {
 export default function HomePage() {
   const router = useRouter();
   const { userId, isLoading: ssoLoading } = useSsoUser();
-  const [activeTab, setActiveTab] = useState<TabId>('faq');
+  const [activeTab, setActiveTab] = useState<TabId>(HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE ? 'bus' : 'faq');
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
-  const [faqLoading, setFaqLoading] = useState(true);
+  const [faqLoading, setFaqLoading] = useState(!(HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE));
   const [faqError, setFaqError] = useState<string | null>(null);
   const [category, setCategory] = useState<InquiryCategory>('접수');
   const [message, setMessage] = useState('');
@@ -337,6 +392,12 @@ export default function HomePage() {
     if (!router.isReady) return;
     const syncFromHash = () => {
       const hash = window.location.hash;
+      if ((HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE) && (hash === '#faq' || hash === '#qa')) {
+        const url = `${window.location.pathname}${window.location.search}#bus`;
+        window.history.replaceState(null, '', url);
+        setActiveTab('bus');
+        return;
+      }
       if (!HUBUP_INQUIRIES_ENABLED && hash === '#qa') {
         const url = `${window.location.pathname}${window.location.search}#faq`;
         window.history.replaceState(null, '', url);
@@ -352,6 +413,11 @@ export default function HomePage() {
   }, [router.isReady, router.asPath]);
 
   useEffect(() => {
+    if (HOME_BUS_ONLY_MODE || HUBUP_BUS_ONLY_MODE) {
+      setFaqLoading(false);
+      setFaqs([]);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setFaqLoading(true);
@@ -455,26 +521,33 @@ export default function HomePage() {
     <Page>
       <Container>
         <HeaderBlock>
-          <MainTitle>[허브업] 문의 센터</MainTitle>
-          <SubTitle>궁금한 점이 있으신가요?</SubTitle>
+          <MainTitle>[허브업] 버스 시간 변경</MainTitle>
+          <SubTitle>신청한 버스 시간을 확인하고, 필요한 경우 변경 요청을 접수할 수 있습니다.</SubTitle>
         </HeaderBlock>
 
         <Panel>
-          <TabBar role="tablist" aria-label="문의 센터 메뉴">
-            {TABS.map((tab) => (
-              <TabButton
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === tab.id}
-                $active={activeTab === tab.id}
-                onClick={() => selectTab(tab.id)}
-              >
-                <TabIcon aria-hidden>{tab.icon}</TabIcon>
-                <TabLabel>{tab.label}</TabLabel>
-              </TabButton>
-            ))}
-          </TabBar>
+          {TABS.length > 1 ? (
+            <TabBar role="tablist" aria-label="문의 센터 메뉴">
+              {TABS.map((tab) => (
+                <TabButton
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  $active={activeTab === tab.id}
+                  onClick={() => selectTab(tab.id)}
+                >
+                  <TabIcon aria-hidden>{tab.icon}</TabIcon>
+                  <TabLabel>{tab.label}</TabLabel>
+                </TabButton>
+              ))}
+            </TabBar>
+          ) : (
+            <SingleSectionHead>
+              <SingleSectionTitle>버스 시간 변경</SingleSectionTitle>
+              <SingleSectionDesc>허브업 버스 신청 정보를 기준으로 변경 요청을 진행할 수 있습니다.</SingleSectionDesc>
+            </SingleSectionHead>
+          )}
 
           <TabBody>
             {activeTab === 'faq' && (

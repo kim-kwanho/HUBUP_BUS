@@ -1,6 +1,9 @@
 /**
- * 문의(질문하기·/admin/inquiries) 마스터 스위치.
- * 기본 비활성. `NEXT_PUBLIC_HUBUP_INQUIRIES_ENABLED=true` 또는 `1`이면 활성.
+ * Inquiries feature and /admin/inquiries. Off by default.
+ * NEXT_PUBLIC_HUBUP_INQUIRIES_ENABLED=true|1 enables unless NEXT_PUBLIC_HUBUP_BUS_ONLY is on.
  */
+import { HUBUP_BUS_ONLY_MODE } from '@src/lib/hubup-bus-only-mode';
+
 const raw = process.env.NEXT_PUBLIC_HUBUP_INQUIRIES_ENABLED?.trim().toLowerCase();
-export const HUBUP_INQUIRIES_ENABLED = raw === 'true' || raw === '1';
+const inquiriesFromEnv = raw === 'true' || raw === '1';
+export const HUBUP_INQUIRIES_ENABLED = !HUBUP_BUS_ONLY_MODE && inquiriesFromEnv;

@@ -3,7 +3,6 @@
  * (hub_web과 동일 Supabase, next-auth 관리자 세션)
  */
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { requireHubUpBusApi } from '@src/lib/hubup-auth-server';
 import { supabaseAdmin } from '@src/lib/supabase';
 import { getKoreanTimestamp } from '@src/lib/utils/date';
 
@@ -136,10 +135,14 @@ function normalizeBusRowForClient(r: Record<string, unknown>): Record<string, un
   };
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const gate = await requireHubUpBusApi(req, res);
-  if (!gate.ok) return;
+function slotValueOrNull(value: unknown): string | null {
+  if (value == null) return null;
+  const text = String(value).trim();
+  if (!text || text === '-') return null;
+  return text;
+}
 
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!supabaseEnvOk()) {
     return res.status(503).json({
       success: false,
@@ -218,6 +221,70 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       const now = getKoreanTimestamp();
+      const shouldApplyRegistrationSlots = status === 'approved';
+
+      const { data: requestRow, error: requestRowError } = await supabaseAdmin
+        .from('hub_up_bus_change_requests')
+        .select(
+          'id, user_id, requested_departure_slot, requested_return_slot, current_departure_slot, current_return_slot'
+        )
+        .eq('id', id)
+        .single();
+
+      if (requestRowError || !requestRow) {
+        console.error('[admin bus-change-requests PUT] fetch request row failed:', requestRowError);
+        return res.status(404).json({ success: false, message: '버스 변경 요청을 찾지 못했습니다.' });
+      }
+
+      const requestUserId =
+        typeof requestRow.user_id === 'string' ? requestRow.user_id.trim() : '';
+      if (shouldApplyRegistrationSlots && !requestUserId) {
+        return res.status(400).json({
+          success: false,
+          message: '요청 row에 user_id가 없어 신청 정보를 갱신할 수 없습니다.'
+        });
+      }
+
+      const requestedDeparture = slotValueOrNull(requestRow.requested_departure_slot);
+      const requestedReturn = slotValueOrNull(requestRow.requested_return_slot);
+      const currentDeparture = slotValueOrNull(requestRow.current_departure_slot);
+      const currentReturn = slotValueOrNull(requestRow.current_return_slot);
+
+      let registrationRollbackPayload: Record<string, unknown> | null = null;
+      if (shouldApplyRegistrationSlots) {
+        const registrationUpdatePayload: Record<string, unknown> = {};
+        if (requestedDeparture != null) registrationUpdatePayload.departure_slot = requestedDeparture;
+        if (requestedReturn != null) registrationUpdatePayload.return_slot = requestedReturn;
+
+        if (Object.keys(registrationUpdatePayload).length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: '승인할 버스 시간 변경 값이 없습니다.'
+          });
+        }
+
+        registrationRollbackPayload = {};
+        if ('departure_slot' in registrationUpdatePayload) {
+          registrationRollbackPayload.departure_slot = currentDeparture;
+        }
+        if ('return_slot' in registrationUpdatePayload) {
+          registrationRollbackPayload.return_slot = currentReturn;
+        }
+
+        const { error: registrationUpdateError } = await supabaseAdmin
+          .from('hub_up_registrations')
+          .update(registrationUpdatePayload)
+          .eq('user_id', requestUserId);
+
+        if (registrationUpdateError) {
+          console.error('[admin bus-change-requests PUT] registrations update failed:', registrationUpdateError);
+          return res.status(500).json({
+            success: false,
+            message: '승인 처리 중 신청 버스 정보를 갱신하지 못했습니다.'
+          });
+        }
+      }
+
       const updatePayload: Record<string, unknown> = {
         status,
         updated_at: now,
@@ -249,6 +316,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       if (error) {
+        if (shouldApplyRegistrationSlots && requestUserId && registrationRollbackPayload) {
+          const { error: rollbackError } = await supabaseAdmin
+            .from('hub_up_registrations')
+            .update(registrationRollbackPayload)
+            .eq('user_id', requestUserId);
+          if (rollbackError) {
+            console.error('[admin bus-change-requests PUT] registrations rollback failed:', rollbackError);
+          }
+        }
         console.error('[admin bus-change-requests PUT]', error);
         return res.status(500).json({ success: false, message: '상태를 변경하지 못했습니다.' });
       }

@@ -512,8 +512,7 @@ export default function AdminInquiriesPage() {
   const queryClient = useQueryClient();
   const profileStatus = session?.user?.profileStatus ?? undefined;
   const roles = session?.user?.roles ?? [];
-  const hubupArea = session?.user?.hubupArea;
-  const canAccess = hubUpHasInquiriesAccess(roles, profileStatus, hubupArea);
+  const canAccess = hubUpHasInquiriesAccess(roles, profileStatus);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');

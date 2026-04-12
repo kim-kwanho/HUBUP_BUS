@@ -3,11 +3,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import AdminShell from '@src/components/admin/AdminShell';
-import { hubUpHasBusAccess } from '@src/lib/hubup-permissions';
 
 type Row = {
   id: string;
@@ -114,9 +112,9 @@ const FilterBtn = styled.button<{ $active: boolean }>`
   padding: 8px 12px;
   border-radius: 999px;
   border: 1px solid
-    ${({ $active }) => ($active ? 'rgba(34, 197, 94, 0.45)' : 'rgba(255, 255, 255, 0.12)')};
-  background: ${({ $active }) => ($active ? 'rgba(34, 197, 94, 0.2)' : 'transparent')};
-  color: ${({ $active }) => ($active ? '#ecfdf5' : 'rgba(226, 232, 240, 0.88)')};
+    ${({ $active }) => ($active ? 'rgba(53, 84, 139, 0.45)' : 'rgba(255, 255, 255, 0.12)')};
+  background: ${({ $active }) => ($active ? 'rgba(53, 84, 139, 0.2)' : 'transparent')};
+  color: ${({ $active }) => ($active ? '#eef4ff' : 'rgba(226, 232, 240, 0.88)')};
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -133,7 +131,7 @@ const SearchMeta = styled.div`
 const ClearLink = styled.button`
   background: none;
   border: none;
-  color: #86efac;
+  color: #a9c4f4;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
@@ -168,62 +166,97 @@ const StatLabel = styled.div`
 
 const Card = styled.section`
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  box-shadow: 0 12px 36px rgba(2, 6, 23, 0.24);
   overflow: hidden;
+`;
+
+const TableWrap = styled.div`
+  overflow-x: auto;
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 760px;
 `;
 
 const Th = styled.th`
   text-align: left;
-  font-size: 12px;
-  opacity: 0.85;
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 11px;
+  color: rgba(226, 232, 240, 0.78);
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.96);
+  white-space: nowrap;
 `;
 
 const Td = styled.td`
-  padding: 12px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   vertical-align: middle;
   font-size: 13px;
+  color: #e5edf7;
 `;
 
 const Badge = styled.span<{ $color: BadgeTone }>`
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
+  justify-content: center;
+  min-width: 56px;
+  padding: 6px 10px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: ${({ $color }) => {
+    switch ($color) {
+      case 'blue':
+        return '#bfdbfe';
+      case 'yellow':
+        return '#fde68a';
+      case 'green':
+        return '#c7d7f6';
+      case 'red':
+        return '#fecaca';
+      case 'purple':
+        return '#e9d5ff';
+      default:
+        return '#cbd5e1';
+    }
+  }};
   background: ${({ $color }) => {
     switch ($color) {
       case 'blue':
-        return 'rgba(59, 130, 246, 0.2)';
+        return 'rgba(59, 130, 246, 0.18)';
       case 'yellow':
-        return 'rgba(234, 179, 8, 0.2)';
+        return 'rgba(234, 179, 8, 0.18)';
       case 'green':
-        return 'rgba(34, 197, 94, 0.2)';
+        return 'rgba(53, 84, 139, 0.18)';
       case 'red':
-        return 'rgba(239, 68, 68, 0.2)';
+        return 'rgba(239, 68, 68, 0.16)';
       case 'purple':
-        return 'rgba(168, 85, 247, 0.2)';
+        return 'rgba(168, 85, 247, 0.16)';
       default:
-        return 'rgba(148, 163, 184, 0.15)';
+        return 'rgba(148, 163, 184, 0.14)';
     }
   }};
 `;
 
 const MsgCell = styled.div`
-  max-width: 420px;
+  color: #f8fafc;
+  font-size: 13.5px;
+  line-height: 1.65;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 `;
 
 const ActionRow = styled.div`
@@ -234,14 +267,22 @@ const ActionRow = styled.div`
 `;
 
 const ActionBtn = styled.button`
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  background: rgba(34, 197, 94, 0.15);
-  color: #ecfdf5;
+  padding: 8px 13px;
+  border-radius: 10px;
+  border: 1px solid rgba(53, 84, 139, 0.28);
+  background: rgba(53, 84, 139, 0.16);
+  color: #eef4ff;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+  &:hover {
+    background: rgba(53, 84, 139, 0.24);
+    border-color: rgba(111, 143, 200, 0.38);
+    transform: translateY(-1px);
+  }
 `;
 
 const EmptyState = styled.div`
@@ -257,6 +298,38 @@ const LoadingRow = styled.tr`
     text-align: center;
     color: rgba(148, 163, 184, 0.95);
   }
+`;
+
+const DataRow = styled.tr`
+  background: rgba(15, 23, 42, 0.66);
+  transition: background 0.15s ease;
+
+  &:nth-of-type(even) {
+    background: rgba(30, 41, 59, 0.56);
+  }
+
+  &:hover {
+    background: rgba(51, 65, 85, 0.76);
+  }
+`;
+
+const OrderText = styled.div`
+  font-size: 14px;
+  font-weight: 800;
+  color: #f8fafc;
+`;
+
+const DateText = styled.div`
+  font-size: 13px;
+  line-height: 1.55;
+  color: #dbe7f3;
+  font-variant-numeric: tabular-nums;
+`;
+
+const ReasonSub = styled.div`
+  margin-top: 6px;
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.92);
 `;
 
 const Modal = styled.div`
@@ -597,13 +670,8 @@ function busStatusPickerLabel(value: string, rowStatus: string): string {
 }
 
 export default function AdminBusRequestsPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  const { status } = useSession();
   const queryClient = useQueryClient();
-  const roles = session?.user?.roles ?? [];
-  const profileStatus = session?.user?.profileStatus ?? undefined;
-  const hubupArea = session?.user?.hubupArea;
-  const canAccess = hubUpHasBusAccess(roles, profileStatus, hubupArea);
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -613,16 +681,6 @@ export default function AdminBusRequestsPage() {
   const [editProcessedNote, setEditProcessedNote] = useState('');
   const [statusPickerOpen, setStatusPickerOpen] = useState(false);
   const statusPickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/api/auth/signin');
-      return;
-    }
-    if (status === 'authenticated' && !canAccess) {
-      router.replace('/admin');
-    }
-  }, [status, canAccess, router]);
 
   useEffect(() => {
     if (!statusPickerOpen) return;
@@ -644,7 +702,7 @@ export default function AdminBusRequestsPage() {
     return () => document.removeEventListener('keydown', onKey);
   }, [statusPickerOpen]);
 
-  const canLoad = status === 'authenticated' && canAccess;
+  const canLoad = status !== 'loading';
 
   const {
     data: busBundle,
@@ -787,7 +845,7 @@ export default function AdminBusRequestsPage() {
     updateMutation.mutate({ id: selected.id, status: editStatus, processedNote: editProcessedNote });
   };
 
-  if (status === 'loading' || (status === 'authenticated' && !canAccess)) {
+  if (status === 'loading') {
     return (
       <AdminShell title="버스 변경 요청">
         <Small>로딩 중…</Small>
@@ -878,14 +936,15 @@ export default function AdminBusRequestsPage() {
       </StatsGrid>
 
       <Card>
+        <TableWrap>
         <Table>
           <thead>
             <tr>
-              <Th style={{ width: 64 }}>순서</Th>
-              <Th style={{ width: 100 }}>상태</Th>
+              <Th style={{ width: 72 }}>순서</Th>
+              <Th style={{ width: 110 }}>상태</Th>
               <Th>사유</Th>
-              <Th style={{ width: 180 }}>접수일</Th>
-              <Th style={{ width: 100 }}>작업</Th>
+              <Th style={{ width: 190 }}>접수일</Th>
+              <Th style={{ width: 108 }}>작업</Th>
             </tr>
           </thead>
           <tbody>
@@ -905,15 +964,20 @@ export default function AdminBusRequestsPage() {
               </LoadingRow>
             ) : (
               filtered.map((row, index) => (
-                <tr key={row.id}>
-                  <Td>{filtered.length - index}</Td>
+                <DataRow key={row.id}>
+                  <Td>
+                    <OrderText>{filtered.length - index}</OrderText>
+                  </Td>
                   <Td>
                     <Badge $color={statusBadgeColor(row.status)}>{statusDisplayLabel(row.status)}</Badge>
                   </Td>
                   <Td title={row.reason}>
                     <MsgCell>{row.reason || '—'}</MsgCell>
+                    <ReasonSub>{row.id.slice(0, 8)}...</ReasonSub>
                   </Td>
-                  <Td>{seoulDate(row.created_at)}</Td>
+                  <Td>
+                    <DateText>{seoulDate(row.created_at)}</DateText>
+                  </Td>
                   <Td>
                     <ActionRow>
                       <ActionBtn type="button" onClick={() => openModal(row)}>
@@ -921,11 +985,12 @@ export default function AdminBusRequestsPage() {
                       </ActionBtn>
                     </ActionRow>
                   </Td>
-                </tr>
+                </DataRow>
               ))
             )}
           </tbody>
         </Table>
+        </TableWrap>
       </Card>
 
       {modalOpen && selected ? (

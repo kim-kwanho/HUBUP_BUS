@@ -1,7 +1,6 @@
 import type { AuthOptions } from 'next-auth/core/types';
 import GoogleProvider from 'next-auth/providers/google';
 import { supabaseAdmin } from '@src/lib/supabase';
-import { fetchHubUpAreaFlags } from '@src/lib/hubup-area-access';
 
 function rolesFromProfile(profile: {
   admin_roles?: unknown;
@@ -86,7 +85,6 @@ export const authOptions: AuthOptions = {
           roles?: string[];
           name?: string | null;
           profileStatus?: string | null;
-          hubupArea?: { bus: boolean; inquiries: boolean };
         };
         sUser.id = token.sub;
         sUser.profileStatus = (token as { profileStatus?: string | null }).profileStatus ?? null;
@@ -117,11 +115,6 @@ export const authOptions: AuthOptions = {
           sUser.profileStatus = typeof profile.status === 'string' ? profile.status : null;
         }
 
-        try {
-          sUser.hubupArea = await fetchHubUpAreaFlags(sUser.roles ?? []);
-        } catch {
-          sUser.hubupArea = { bus: false, inquiries: false };
-        }
       }
       return session;
     }

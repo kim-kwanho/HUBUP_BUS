@@ -2,6 +2,7 @@
 -- 허브업 / 버스 / admin 전용 — 파일: 012_hubup_bus_admin.sql
 -- HUBUP Admin 전용 admin_menus 2행 + admin_menu_roles (기존 테이블 사용)
 -- hub_web 다른 메뉴는 건드리지 않고, menu_id 가 아래 두 개인 행만 다룹니다.
+-- 문의(hub_up_inquires)·역할 실행 순서: README_HUB_UP_INQUIRES.md 참고
 -- ================================================================
 
 INSERT INTO public.admin_menus (menu_id, title, icon, path, parent_id, order_index, is_active)

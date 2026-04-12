@@ -1,11 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@src/lib/auth';
-import {
-  hubUpHasBusAccess,
-  hubUpHasInquiriesAccess,
-  hubUpHasOrgWideAdmin
-} from '@src/lib/hubup-permissions';
+import { hubUpHasInquiriesAccess, hubUpHasOrgWideAdmin } from '@src/lib/hubup-permissions';
 
 export async function requireHubUpInquiriesApi(
   req: NextApiRequest,
@@ -18,8 +14,7 @@ export async function requireHubUpInquiriesApi(
   }
   const roles = session.user.roles ?? [];
   const profileStatus = session.user.profileStatus ?? undefined;
-  const hubupArea = session.user.hubupArea;
-  if (!hubUpHasInquiriesAccess(roles, profileStatus, hubupArea)) {
+  if (!hubUpHasInquiriesAccess(roles, profileStatus)) {
     res.status(403).json({ success: false, message: '문의 관리 권한이 없습니다.' });
     return { ok: false };
   }
@@ -33,13 +28,6 @@ export async function requireHubUpBusApi(
   const session = await getServerSession(req, res, authOptions);
   if (!session?.user) {
     res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
-    return { ok: false };
-  }
-  const roles = session.user.roles ?? [];
-  const profileStatus = session.user.profileStatus ?? undefined;
-  const hubupArea = session.user.hubupArea;
-  if (!hubUpHasBusAccess(roles, profileStatus, hubupArea)) {
-    res.status(403).json({ success: false, message: '버스 변경 요청 관리 권한이 없습니다.' });
     return { ok: false };
   }
   return { ok: true, session };
