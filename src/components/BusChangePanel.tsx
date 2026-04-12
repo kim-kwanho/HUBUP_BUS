@@ -37,8 +37,8 @@ const TicketLead = styled.p`
   margin: 0 0 12px;
   font-size: 14px;
   line-height: 1.65;
-  color: ${HUBUP_TEXT_SOFT};
-  font-weight: 500;
+  color: #23324f;
+  font-weight: 700;
 `;
 
 /** 티켓형 버스 현황 */
