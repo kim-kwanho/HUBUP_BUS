@@ -522,7 +522,7 @@ export default function HomePage() {
       <Container>
         <HeaderBlock>
           <MainTitle>[허브업] 버스 시간 변경</MainTitle>
-          <SubTitle>신청한 버스 시간을 확인하고, 필요한 경우 변경 요청을 접수할 수 있습니다.</SubTitle>
+          <SubTitle>신청한 버스 시간을 확인하고 변경을 요청할 수 있습니다.</SubTitle>
         </HeaderBlock>
 
         <Panel>
@@ -545,7 +545,7 @@ export default function HomePage() {
           ) : (
             <SingleSectionHead>
               <SingleSectionTitle>버스 시간 변경</SingleSectionTitle>
-              <SingleSectionDesc>허브업 버스 신청 정보를 기준으로 변경 요청을 진행할 수 있습니다.</SingleSectionDesc>
+              <SingleSectionDesc>현재 신청 정보 기준으로 변경을 요청합니다.</SingleSectionDesc>
             </SingleSectionHead>
           )}
 

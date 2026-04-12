@@ -528,7 +528,7 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
   return (
     <>
       <TicketLead>
-        허브업 신청 시 선택한 출발·복귀 시간을 확인하고, 필요하면 변경을 요청할 수 있습니다.
+        선택한 버스 시간을 확인하고, 필요하면 아래에서 다시 요청해 주세요.
       </TicketLead>
 
       <TicketRoot>
@@ -579,10 +579,7 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
 
       <IntroBlock>
         <IntroParagraph>
-          변경을 원하시면 아래에서 출발·복귀 시간과 변경 사유를 입력한 뒤 제출해 주세요.
-        </IntroParagraph>
-        <IntroParagraph>
-          제출하시면 요청이 접수되고, 담당자 확인 후 처리됩니다.
+          변경이 필요하면 아래에서 시간과 사유를 입력해 다시 요청할 수 있습니다.
         </IntroParagraph>
       </IntroBlock>
 
