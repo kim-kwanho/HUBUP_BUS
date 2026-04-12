@@ -300,19 +300,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         .select()
         .single();
 
-      if (
-        error &&
-        (columnMissingInError(error, 'processed_at') || columnMissingInError(error, 'processed_note'))
-      ) {
-        const { processed_at: _a, processed_note: _n, ...rest } = updatePayload;
-        const second = await supabaseAdmin
-          .from('hub_up_bus_change_requests')
-          .update(rest)
-          .eq('id', id)
-          .select()
-          .single();
-        updated = second.data;
-        error = second.error;
+      if (error) {
+        let fallbackPayload = { ...updatePayload };
+        let strippedAny = false;
+
+        if (columnMissingInError(error, 'processed_at')) {
+          const { processed_at: _a, ...rest } = fallbackPayload;
+          fallbackPayload = rest;
+          strippedAny = true;
+        }
+        if (columnMissingInError(error, 'processed_note')) {
+          const { processed_note: _n, ...rest } = fallbackPayload;
+          fallbackPayload = rest;
+          strippedAny = true;
+        }
+        if (columnMissingInError(error, 'updated_at')) {
+          const { updated_at: _u, ...rest } = fallbackPayload;
+          fallbackPayload = rest;
+          strippedAny = true;
+        }
+
+        if (strippedAny) {
+          const second = await supabaseAdmin
+            .from('hub_up_bus_change_requests')
+            .update(fallbackPayload)
+            .eq('id', id)
+            .select()
+            .single();
+          updated = second.data;
+          error = second.error;
+        }
       }
 
       if (error) {

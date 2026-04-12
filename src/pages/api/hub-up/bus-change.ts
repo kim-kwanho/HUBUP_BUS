@@ -191,6 +191,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: string;
         created_at: string;
       } | null = null;
+      let recentApproved: {
+        id: string;
+        requested_departure_slot: string | null;
+        requested_return_slot: string | null;
+        reason: string;
+        status: string;
+        created_at: string;
+      } | null = null;
       let pendingWarning: string | undefined;
 
       const pendingRes = await supabaseAdmin
@@ -206,6 +214,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'hub_up_bus_change_requests 테이블을 조회하지 못했습니다. supabase/sql/002 스크립트 실행 여부를 확인하세요.';
       } else {
         pending = pendingRes.data ?? null;
+      }
+
+      const approvedRes = await supabaseAdmin
+        .from('hub_up_bus_change_requests')
+        .select('id, requested_departure_slot, requested_return_slot, reason, status, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (approvedRes.error) {
+        console.error('[bus-change GET approved]', approvedRes.error);
+      } else {
+        recentApproved = approvedRes.data ?? null;
       }
 
       const depList = (depSlots || []) as { value: string; label: string }[];
@@ -225,6 +248,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           departureOptions: depList,
           returnOptions: retList,
           pendingRequest: pending,
+          recentApprovedRequest: pending ? null : recentApproved,
           ...(pendingWarning ? { meta: { warning: pendingWarning } } : {})
         }
       });

@@ -28,6 +28,7 @@ type BusData = {
   departureOptions: SlotOpt[];
   returnOptions: SlotOpt[];
   pendingRequest: PendingRow | null;
+  recentApprovedRequest?: PendingRow | null;
   meta?: { warning?: string };
 };
 
@@ -378,6 +379,24 @@ function formatPendingLine(
   return `처리 대기 중입니다. 요청: ${req}`;
 }
 
+function formatApprovedLine(
+  p: PendingRow,
+  depOpts: SlotOpt[],
+  retOpts: SlotOpt[]
+): string {
+  const dep = p.requested_departure_slot
+    ? depOpts.find((o) => o.value === p.requested_departure_slot)?.label ?? p.requested_departure_slot
+    : null;
+  const ret = p.requested_return_slot
+    ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
+    : null;
+  const parts: string[] = [];
+  if (dep) parts.push(`출발 ${dep}`);
+  if (ret) parts.push(`복귀 ${ret}`);
+  if (!parts.length) return '최근 요청이 승인되었습니다.';
+  return `최근 요청이 승인되었습니다. 반영된 시간: ${parts.join(' / ')}`;
+}
+
 type Props = {
   userId: string | null;
   ssoLoading: boolean;
@@ -503,6 +522,7 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
   const depSelectOpts = withNoChange(data.departureOptions);
   const retSelectOpts = withNoChange(data.returnOptions);
   const hasPending = Boolean(data.pendingRequest);
+  const hasRecentApproved = Boolean(data.recentApprovedRequest);
   const canSubmit = data.hasRegistration && !hasPending;
 
   return (
@@ -543,6 +563,13 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
                 {formatPendingLine(data.pendingRequest, data.departureOptions, data.returnOptions)}
               </TicketStubText>
               <TicketStubHint>담당자 확인 후 처리됩니다.</TicketStubHint>
+            </>
+          ) : hasRecentApproved && data.recentApprovedRequest ? (
+            <>
+              <TicketStubText>
+                {formatApprovedLine(data.recentApprovedRequest, data.departureOptions, data.returnOptions)}
+              </TicketStubText>
+              <TicketStubHint>승인된 변경 시간이 현재 버스 정보에 반영되어 있습니다.</TicketStubHint>
             </>
           ) : (
             <TicketStubMuted>아직 변경 요청 내역이 없습니다.</TicketStubMuted>

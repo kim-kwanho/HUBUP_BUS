@@ -1,7 +1,7 @@
 /**
  * 문의사항 관리(admin/inquiries)와 동일 UX: 통계·검색·필터·테이블·상세 모달
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
@@ -452,17 +452,8 @@ const SlotCompareCell = styled.div<{ $tone: 'before' | 'after' }>`
     $tone === 'before' ? 'rgba(251, 191, 36, 0.05)' : 'rgba(16, 185, 129, 0.07)'};
 `;
 
-const StatusPickerWrap = styled.div`
-  position: relative;
+const StatusSelect = styled.select`
   width: 100%;
-`;
-
-const StatusTrigger = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
   padding: 12px 14px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -471,8 +462,6 @@ const StatusTrigger = styled.button`
   font-size: 14px;
   font-weight: 600;
   line-height: 1.4;
-  text-align: left;
-  cursor: pointer;
   min-height: 46px;
   font-family: inherit;
 
@@ -487,57 +476,6 @@ const StatusTrigger = styled.button`
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
-  }
-`;
-
-const StatusChevron = styled.span`
-  flex-shrink: 0;
-  font-size: 10px;
-  opacity: 0.8;
-  line-height: 1;
-`;
-
-const StatusDropdown = styled.div`
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 6px);
-  z-index: 120;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: #0f172a;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
-  overflow: hidden;
-  max-height: min(300px, 46vh);
-  overflow-y: auto;
-`;
-
-const StatusOptionBtn = styled.button<{ $active?: boolean }>`
-  display: block;
-  width: 100%;
-  padding: 12px 14px;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: ${({ $active }) =>
-    $active ? 'rgba(59, 130, 246, 0.2)' : 'transparent'};
-  color: #f8fafc;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.45;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-
-  &:last-child {
-    border-bottom: none;
-  }
-  &:hover {
-    background: ${({ $active }) =>
-      $active ? 'rgba(59, 130, 246, 0.32)' : 'rgba(148, 163, 184, 0.14)'};
-  }
-  &:focus-visible {
-    outline: none;
-    box-shadow: inset 0 0 0 2px rgba(52, 211, 153, 0.45);
   }
 `;
 
@@ -662,13 +600,6 @@ function slotLine(label: string | null | undefined, rawSlot: string | null | und
   return '—';
 }
 
-function busStatusPickerLabel(value: string, rowStatus: string): string {
-  const o = STATUS_OPTIONS.find((x) => x.value === value);
-  if (o) return o.label;
-  if (value === rowStatus) return `${value} (현재값)`;
-  return value;
-}
-
 export default function AdminBusRequestsPage() {
   const { status } = useSession();
   const queryClient = useQueryClient();
@@ -679,28 +610,6 @@ export default function AdminBusRequestsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editStatus, setEditStatus] = useState('');
   const [editProcessedNote, setEditProcessedNote] = useState('');
-  const [statusPickerOpen, setStatusPickerOpen] = useState(false);
-  const statusPickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!statusPickerOpen) return;
-    const onDoc = (e: MouseEvent) => {
-      if (statusPickerRef.current && !statusPickerRef.current.contains(e.target as Node)) {
-        setStatusPickerOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
-  }, [statusPickerOpen]);
-
-  useEffect(() => {
-    if (!statusPickerOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setStatusPickerOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [statusPickerOpen]);
 
   const canLoad = status !== 'loading';
 
@@ -815,7 +724,6 @@ export default function AdminBusRequestsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['hubup-admin-bus-requests'] });
-      setStatusPickerOpen(false);
       setModalOpen(false);
       setSelected(null);
       alert('상태가 저장되었습니다.');
@@ -827,13 +735,11 @@ export default function AdminBusRequestsPage() {
     setSelected(row);
     setEditStatus(row.status);
     setEditProcessedNote(typeof row.processed_note === 'string' ? row.processed_note : '');
-    setStatusPickerOpen(false);
     setModalOpen(true);
   };
 
   const closeModal = () => {
     if (updateMutation.isPending) return;
-    setStatusPickerOpen(false);
     setModalOpen(false);
     setSelected(null);
     setEditStatus('');
@@ -1062,39 +968,18 @@ export default function AdminBusRequestsPage() {
 
             <FormGroup>
               <Label id="bus-req-status-label">상태</Label>
-              <StatusPickerWrap ref={statusPickerRef}>
-                <StatusTrigger
-                  type="button"
-                  id="bus-req-status-trigger"
+              <StatusSelect
+                  id="bus-req-status-select"
                   disabled={updateMutation.isPending}
-                  onClick={() => setStatusPickerOpen((open) => !open)}
-                  aria-expanded={statusPickerOpen}
-                  aria-haspopup="listbox"
-                  aria-controls="bus-req-status-listbox"
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
                 >
-                  <span>{busStatusPickerLabel(editStatus, selected.status)}</span>
-                  <StatusChevron aria-hidden>{statusPickerOpen ? '▲' : '▼'}</StatusChevron>
-                </StatusTrigger>
-                {statusPickerOpen ? (
-                  <StatusDropdown id="bus-req-status-listbox" role="listbox" aria-labelledby="bus-req-status-label">
-                    {statusPickerOptions.map((o) => (
-                      <StatusOptionBtn
-                        key={o.value}
-                        type="button"
-                        role="option"
-                        aria-selected={editStatus === o.value}
-                        $active={editStatus === o.value}
-                        onClick={() => {
-                          setEditStatus(o.value);
-                          setStatusPickerOpen(false);
-                        }}
-                      >
-                        {o.label}
-                      </StatusOptionBtn>
-                    ))}
-                  </StatusDropdown>
-                ) : null}
-              </StatusPickerWrap>
+                  {statusPickerOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+              </StatusSelect>
             </FormGroup>
 
             {selected.processed_at ? (
