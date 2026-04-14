@@ -33,6 +33,13 @@ export type HubUpBusChangeInsertParams = {
   requestedDepartureSlot: string | null;
   requestedReturnSlot: string | null;
   reason: string;
+  // 자차 관련 변경 필드 (선택적)
+  carRole?: string;
+  carPassengerCount?: string;
+  carPassengerNames?: string;
+  carPlateNumber?: string;
+  carArrivalTime?: string;
+  carDepartureTime?: string;
 };
 
 /**
@@ -65,6 +72,13 @@ export function buildHubUpBusChangeInsertRow(
     requested_departure_slot: params.requestedDepartureSlot,
     requested_return_slot: params.requestedReturnSlot,
     reason: params.reason,
-    status: 'pending'
+    status: 'pending',
+    // 자차 관련 필드 (제공된 경우에만 포함)
+    ...(params.carRole !== undefined ? { car_role: params.carRole } : {}),
+    ...(params.carPassengerCount !== undefined ? { car_passenger_count: params.carPassengerCount || null } : {}),
+    ...(params.carPassengerNames !== undefined ? { car_passenger_names: params.carPassengerNames || null } : {}),
+    ...(params.carPlateNumber !== undefined ? { car_plate_number: params.carPlateNumber || null } : {}),
+    ...(params.carArrivalTime !== undefined ? { car_arrival_time: params.carArrivalTime || null } : {}),
+    ...(params.carDepartureTime !== undefined ? { car_departure_time: params.carDepartureTime || null } : {}),
   };
 }

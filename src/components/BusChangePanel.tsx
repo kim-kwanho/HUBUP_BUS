@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import styled from '@emotion/styled';
+import TimePicker from './TimePicker';
 
 type SlotOpt = { value: string; label: string };
 const HUBUP_NAVY = '#0f172d';
@@ -25,6 +26,13 @@ type BusData = {
   hasRegistration: boolean;
   currentDeparture: SlotOpt | null;
   currentReturn: SlotOpt | null;
+  // 자차 세부 정보
+  carRole: string | null;
+  carPassengerCount: string | number | null;
+  carPassengerNames: string | null;
+  carPlateNumber: string | null;
+  carArrivalTime: string | null;
+  carDepartureTime: string | null;
   departureOptions: SlotOpt[];
   returnOptions: SlotOpt[];
   pendingRequest: PendingRow | null;
@@ -360,7 +368,6 @@ const ErrorText = styled.p`
 function withNoChange(opts: SlotOpt[]): { value: string; label: string }[] {
   return [{ value: '', label: '변경 없음' }, ...opts];
 }
-
 function formatPendingLine(
   p: PendingRow,
   depOpts: SlotOpt[],
@@ -412,6 +419,14 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // 자차 관련 상태
+  const [carRole, setCarRole] = useState('');
+  const [carPassengerCount, setCarPassengerCount] = useState('');
+  const [carPassengerNames, setCarPassengerNames] = useState('');
+  const [carPlateNumber, setCarPlateNumber] = useState('');
+  const [carArrivalTime, setCarArrivalTime] = useState('');
+  const [carDepartureTime, setCarDepartureTime] = useState('');
+
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -441,6 +456,13 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
       setReturnChoice('');
       setReason('');
       setFormError(null);
+      // 자차 상태 초기화 (현재 등록 값으로)
+      setCarRole(d.carRole ?? '');
+      setCarPassengerCount(d.carPassengerCount != null ? String(d.carPassengerCount) : '');
+      setCarPassengerNames(d.carPassengerNames ?? '');
+      setCarPlateNumber(d.carPlateNumber ?? '');
+      setCarArrivalTime(d.carArrivalTime ?? '');
+      setCarDepartureTime(d.carDepartureTime ?? '');
     } catch (e) {
       setData(null);
       setLoadError(e instanceof Error ? e.message : '오류가 발생했습니다.');
@@ -460,6 +482,18 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
       setFormError('변경 사유를 입력해 주세요.');
       return;
     }
+
+    // 자차 슬롯 선택 시 필수 필드 검증
+    const effectiveDepSlot = departureChoice || data?.currentDeparture?.value || '';
+    const effectiveRetSlot = returnChoice || data?.currentReturn?.value || '';
+    const isCarMode = effectiveDepSlot === 'car' || effectiveRetSlot === 'car';
+    if (isCarMode) {
+      if (!carRole) { setFormError('자차/대중교통 해당사항을 선택해 주세요.'); return; }
+      if (effectiveDepSlot === 'car' && !carArrivalTime) { setFormError('입소 예정 시간을 선택해 주세요.'); return; }
+      if (effectiveRetSlot === 'car' && !carDepartureTime) { setFormError('퇴소 예정 시간을 선택해 주세요.'); return; }
+      if (carRole === '자가운전자' && !carPlateNumber) { setFormError('차량 번호를 입력해 주세요.'); return; }
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch('/api/hub-up/bus-change', {
@@ -468,7 +502,14 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
         body: JSON.stringify({
           requestedDepartureSlot: departureChoice,
           requestedReturnSlot: returnChoice,
-          reason: reason.trim()
+          reason: reason.trim(),
+          // 자차 관련 필드
+          carRole: carRole || undefined,
+          carPassengerCount: carPassengerCount || undefined,
+          carPassengerNames: carPassengerNames || undefined,
+          carPlateNumber: carPlateNumber || undefined,
+          carArrivalTime: carArrivalTime || undefined,
+          carDepartureTime: carDepartureTime || undefined,
         })
       });
       const json = (await res.json()) as {
@@ -524,6 +565,18 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
   const hasPending = Boolean(data.pendingRequest);
   const hasRecentApproved = Boolean(data.recentApprovedRequest);
   const canSubmit = data.hasRegistration && !hasPending;
+
+  // 현재 선택된 슬롯 (폼에서 변경 중인 값 또는 기존 값)
+  const effectiveDepSlot = departureChoice || data.currentDeparture?.value || '';
+  const effectiveRetSlot = returnChoice || data.currentReturn?.value || '';
+  const isCarMode = effectiveDepSlot === 'car' || effectiveRetSlot === 'car';
+  const isCurrentCar = data.currentDeparture?.value === 'car' || data.currentReturn?.value === 'car';
+
+  const CAR_ROLE_OPTIONS = [
+    { value: '자가운전자', label: '자가운전자 (주차O)' },
+    { value: '동승자', label: '동승자 (주차X)' },
+    { value: '택시 및 대중교통', label: '택시 및 대중교통 이용' },
+  ];
 
   return (
     <>
@@ -583,6 +636,54 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
         </IntroParagraph>
       </IntroBlock>
 
+      {/* 자차 현황 표시 */}
+      {isCurrentCar && (
+        <CarInfoBlock>
+          <CarInfoTitle>🚗 자차 / 대중교통 정보</CarInfoTitle>
+          {data.carRole && (
+            <CarInfoRow>
+              <CarInfoLabel>구분</CarInfoLabel>
+              <CarInfoValue>
+                {data.carRole === '자가운전자' ? '자가운전자 (주차O)'
+                  : data.carRole === '동승자' ? '동승자 (주차X)'
+                  : data.carRole === '택시 및 대중교통' ? '택시 및 대중교통 이용'
+                  : data.carRole}
+              </CarInfoValue>
+            </CarInfoRow>
+          )}
+          {data.carArrivalTime && (
+            <CarInfoRow>
+              <CarInfoLabel>입소 예정</CarInfoLabel>
+              <CarInfoValue>{data.carArrivalTime}</CarInfoValue>
+            </CarInfoRow>
+          )}
+          {data.carDepartureTime && (
+            <CarInfoRow>
+              <CarInfoLabel>퇴소 예정</CarInfoLabel>
+              <CarInfoValue>{data.carDepartureTime}</CarInfoValue>
+            </CarInfoRow>
+          )}
+          {data.carPlateNumber && (
+            <CarInfoRow>
+              <CarInfoLabel>차량 번호</CarInfoLabel>
+              <CarInfoValue>{data.carPlateNumber}</CarInfoValue>
+            </CarInfoRow>
+          )}
+          {data.carPassengerCount && (
+            <CarInfoRow>
+              <CarInfoLabel>탑승 인원</CarInfoLabel>
+              <CarInfoValue>{data.carPassengerCount}명</CarInfoValue>
+            </CarInfoRow>
+          )}
+          {data.carPassengerNames && (
+            <CarInfoRow>
+              <CarInfoLabel>동승자</CarInfoLabel>
+              <CarInfoValue>{data.carPassengerNames}</CarInfoValue>
+            </CarInfoRow>
+          )}
+        </CarInfoBlock>
+      )}
+
       {!data.hasRegistration && (
         <Message style={{ marginBottom: 16 }}>
           허브업 버스 신청 내역이 없습니다. 허브워십에서 허브업 신청을 완료한 뒤 이용해 주세요.
@@ -623,6 +724,97 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
         </Select>
       </Label>
 
+      {/* 자차 선택 시 세부 정보 입력 */}
+      {isCarMode && canSubmit && (
+        <>
+          <SectionDivider>자차 / 대중교통 정보</SectionDivider>
+
+          <Label>
+            자차 / 대중교통 해당사항 <Req>*</Req>
+            <Select
+              value={carRole}
+              onChange={(e) => setCarRole(e.target.value)}
+            >
+              <option value="">선택해주세요</option>
+              {CAR_ROLE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </Select>
+          </Label>
+
+          {carRole === '자가운전자' && (
+            <>
+              <Label>
+                총 탑승 인원 <Req>*</Req>
+                <Select
+                  value={carPassengerCount}
+                  onChange={(e) => setCarPassengerCount(e.target.value)}
+                >
+                  <option value="">선택해주세요</option>
+                  <option value="1">1명 (혼자 - 동승자 없음)</option>
+                  {[2,3,4,5,6,7,8].map(n => (
+                    <option key={n} value={String(n)}>{n}명</option>
+                  ))}
+                </Select>
+              </Label>
+
+              {carPassengerCount && carPassengerCount !== '1' && (
+                <Label>
+                  동승자 이름 <span style={{ fontWeight: 400, fontSize: 12, color: '#6b7280' }}>(쉼표로 구분)</span>
+                  <TextInput
+                    value={carPassengerNames}
+                    onChange={(e) => setCarPassengerNames(e.target.value)}
+                    placeholder="예: 홍길동, 김철수"
+                  />
+                </Label>
+              )}
+
+              <Label>
+                차량 번호 <Req>*</Req>
+                <TextInput
+                  value={carPlateNumber}
+                  onChange={(e) => setCarPlateNumber(e.target.value)}
+                  placeholder="예: 12가 3456"
+                />
+              </Label>
+            </>
+          )}
+
+          {effectiveDepSlot === 'car' && (
+            <Label>
+              입소 예정 시간 <Req>*</Req>
+              <TimePickerWrap>
+                <TimePicker
+                  label=""
+                  value={carArrivalTime}
+                  onChange={setCarArrivalTime}
+                  minHour={14}
+                  maxHour={23}
+                  dates={['5/15', '5/16']}
+                  dateMinHours={{ '5/15': 14, '5/16': 7 }}
+                />
+              </TimePickerWrap>
+            </Label>
+          )}
+
+          {effectiveRetSlot === 'car' && (
+            <Label>
+              퇴소 예정 시간 <Req>*</Req>
+              <TimePickerWrap>
+                <TimePicker
+                  label=""
+                  value={carDepartureTime}
+                  onChange={setCarDepartureTime}
+                  minHour={7}
+                  maxHour={23}
+                  dates={['5/16', '5/17']}
+                />
+              </TimePickerWrap>
+            </Label>
+          )}
+        </>
+      )}
+
       <Label>
         <span>
           변경 사유 <span style={{ color: '#b91c1c' }}>*</span>
@@ -645,3 +837,92 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
     </>
   );
 }
+
+// ── 추가 스타일 컴포넌트 ──────────────────────────────────────
+
+const CarInfoBlock = styled.section`
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(47, 79, 134, 0.06) 0%, #f7f9fd 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(53, 84, 139, 0.14);
+`;
+
+const CarInfoTitle = styled.p`
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #243b63;
+`;
+
+const CarInfoRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const CarInfoLabel = styled.span`
+  flex-shrink: 0;
+  width: 64px;
+  color: #62718a;
+  font-weight: 500;
+`;
+
+const CarInfoValue = styled.span`
+  color: #18253f;
+  font-weight: 600;
+`;
+
+const SectionDivider = styled.div`
+  margin: 18px 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #243b63;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(53, 84, 139, 0.18);
+  }
+`;
+
+const Req = styled.span`
+  color: #b91c1c;
+  margin-left: 2px;
+`;
+
+const TextInput = styled.input`
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(53, 84, 139, 0.18);
+  background: #ffffff;
+  color: #18253f;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: ${HUBUP_BLUE};
+    box-shadow: 0 0 0 3px rgba(53, 84, 139, 0.18);
+  }
+
+  &::placeholder {
+    color: rgba(100, 116, 139, 0.72);
+  }
+`;
+
+const TimePickerWrap = styled.div`
+  margin-top: 8px;
+`;
