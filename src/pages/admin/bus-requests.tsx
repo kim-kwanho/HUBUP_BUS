@@ -68,12 +68,23 @@ const Title = styled.h2`
   font-size: 18px;
   font-weight: 800;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    font-size: 19px;
+    line-height: 1.35;
+  }
 `;
 
 const Subtitle = styled.p`
   margin: 0;
   font-size: 13px;
   color: rgba(148, 163, 184, 0.95);
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #cbd5e1;
+  }
 `;
 
 const FilterSection = styled.div`
@@ -92,6 +103,14 @@ const SearchInput = styled.input`
   background: rgba(5, 10, 25, 0.45);
   color: #f1f5f9;
   font-size: 14px;
+
+  @media (max-width: 640px) {
+    max-width: none;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 14px;
+    line-height: 1.4;
+  }
 `;
 
 const FilterRow = styled.div`
@@ -99,6 +118,10 @@ const FilterRow = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+
+  @media (max-width: 640px) {
+    gap: 10px;
+  }
 `;
 
 const FilterLabel = styled.span`
@@ -106,6 +129,11 @@ const FilterLabel = styled.span`
   font-weight: 600;
   color: rgba(148, 163, 184, 0.95);
   margin-right: 4px;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    color: #cbd5e1;
+  }
 `;
 
 const FilterBtn = styled.button<{ $active: boolean }>`
@@ -118,6 +146,13 @@ const FilterBtn = styled.button<{ $active: boolean }>`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
 `;
 
 const SearchMeta = styled.div`
@@ -126,6 +161,12 @@ const SearchMeta = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #cbd5e1;
+  }
 `;
 
 const ClearLink = styled.button`
@@ -136,6 +177,12 @@ const ClearLink = styled.button`
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    min-height: 44px;
+    padding: 0 4px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -143,6 +190,12 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
   margin-bottom: 18px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -150,18 +203,36 @@ const StatCard = styled.div`
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
 `;
 
 const StatValue = styled.div`
   font-size: 20px;
   font-weight: 800;
   color: #f1f5f9;
+  line-height: 1.15;
+
+  @media (max-width: 640px) {
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
 `;
 
 const StatLabel = styled.div`
   font-size: 11px;
   color: rgba(148, 163, 184, 0.95);
   margin-top: 4px;
+
+  @media (max-width: 640px) {
+    font-size: 11px;
+    margin-top: 2px;
+    color: #94a3b8;
+    line-height: 1.25;
+  }
 `;
 
 const Card = styled.section`
@@ -174,6 +245,15 @@ const Card = styled.section`
 
 const TableWrap = styled.div`
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  scrollbar-gutter: stable;
+
+  @media (max-width: 640px) {
+    margin: 0 -4px;
+    padding: 0 4px;
+    display: none;
+  }
 `;
 
 const Table = styled.table`
@@ -193,6 +273,12 @@ const Th = styled.th`
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   background: rgba(15, 23, 42, 0.96);
   white-space: nowrap;
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    padding: 12px 14px;
+    color: #cbd5e1;
+  }
 `;
 
 const Td = styled.td`
@@ -201,7 +287,16 @@ const Td = styled.td`
   vertical-align: middle;
   font-size: 13px;
   color: #e5edf7;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 14px;
+    color: #f1f5f9;
+  }
 `;
+
+// 모바일은 카드형 리스트로 별도 렌더링(아래 MobileList)
 
 const Badge = styled.span<{ $color: BadgeTone }>`
   display: inline-flex;
@@ -246,6 +341,12 @@ const Badge = styled.span<{ $color: BadgeTone }>`
         return 'rgba(148, 163, 184, 0.14)';
     }
   }};
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    padding: 7px 12px;
+    min-width: 52px;
+  }
 `;
 
 const MsgCell = styled.div`
@@ -257,6 +358,13 @@ const MsgCell = styled.div`
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
+
+  @media (max-width: 640px) {
+    /* 모바일 테이블은 숨김 처리되므로(카드형 사용) 여기 값은 영향 최소 */
+    font-size: 13.5px;
+    line-height: 1.65;
+    -webkit-line-clamp: 2;
+  }
 `;
 
 const ActionRow = styled.div`
@@ -264,6 +372,10 @@ const ActionRow = styled.div`
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
+
+  @media (max-width: 640px) {
+    justify-content: flex-end;
+  }
 `;
 
 const ActionBtn = styled.button`
@@ -283,6 +395,12 @@ const ActionBtn = styled.button`
     border-color: rgba(111, 143, 200, 0.38);
     transform: translateY(-1px);
   }
+
+  @media (max-width: 640px) {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -290,6 +408,12 @@ const EmptyState = styled.div`
   text-align: center;
   color: rgba(148, 163, 184, 0.95);
   font-size: 14px;
+
+  @media (max-width: 640px) {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #cbd5e1;
+  }
 `;
 
 const LoadingRow = styled.tr`
@@ -317,6 +441,10 @@ const OrderText = styled.div`
   font-size: 14px;
   font-weight: 800;
   color: #f8fafc;
+
+  @media (max-width: 640px) {
+    font-size: 15px;
+  }
 `;
 
 const DateText = styled.div`
@@ -324,12 +452,105 @@ const DateText = styled.div`
   line-height: 1.55;
   color: #dbe7f3;
   font-variant-numeric: tabular-nums;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #e2e8f0;
+  }
 `;
 
 const ReasonSub = styled.div`
   margin-top: 6px;
   font-size: 11px;
   color: rgba(148, 163, 184, 0.92);
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    margin-top: 8px;
+    color: #94a3b8;
+  }
+`;
+
+const MobileList = styled.div`
+  display: none;
+
+  @media (max-width: 640px) {
+    display: block;
+    padding: 6px;
+  }
+`;
+
+const MobileItem = styled.button`
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  color: inherit;
+
+  & + & {
+    margin-top: 10px;
+  }
+`;
+
+const MobileTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+const MobileLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+`;
+
+const MobileOrder = styled.div`
+  font-weight: 900;
+  font-size: 16px;
+  color: #f8fafc;
+  width: 22px;
+  flex-shrink: 0;
+`;
+
+const MobileReason = styled.div`
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const MobileSub = styled.div`
+  margin-top: 6px;
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+const MobileDetailBtn = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(53, 84, 139, 0.28);
+  background: rgba(53, 84, 139, 0.16);
+  color: #eef4ff;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
 `;
 
 const Modal = styled.div`
@@ -341,23 +562,40 @@ const Modal = styled.div`
   align-items: center;
   justify-content: center;
   padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    align-items: flex-end;
+  }
 `;
 
 const ModalCard = styled.div`
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
+  max-height: min(90vh, 90dvh);
   overflow: auto;
   border-radius: 16px;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    max-height: min(92vh, 92dvh);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  }
 `;
 
 const ModalHead = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
   margin-bottom: 16px;
 `;
 
@@ -366,6 +604,13 @@ const ModalTitle = styled.h3`
   font-size: 17px;
   font-weight: 800;
   color: #f1f5f9;
+  line-height: 1.35;
+  padding-right: 8px;
+
+  @media (max-width: 640px) {
+    font-size: 18px;
+    line-height: 1.4;
+  }
 `;
 
 const CloseBtn = styled.button`
@@ -375,6 +620,14 @@ const CloseBtn = styled.button`
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -8px -4px -8px 0;
+  border-radius: 10px;
 `;
 
 const FormGroup = styled.div`
@@ -387,6 +640,12 @@ const Label = styled.label`
   font-weight: 600;
   color: rgba(148, 163, 184, 0.95);
   margin-bottom: 6px;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+  }
 `;
 
 const MessageBox = styled.div`
@@ -398,19 +657,28 @@ const MessageBox = styled.div`
   line-height: 1.55;
   white-space: pre-wrap;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 14px;
+  }
 `;
 
 /** 모달: 출발·복귀 — 변경 전 vs 요청 비교 */
 const SlotCompareBox = styled.div`
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   background: rgba(0, 0, 0, 0.22);
 `;
 
 const SlotCompareGrid = styled.div`
   display: grid;
   grid-template-columns: minmax(56px, 76px) minmax(0, 1fr) minmax(0, 1fr);
+  min-width: min(100%, 300px);
   font-size: 13px;
   line-height: 1.5;
 `;
@@ -430,6 +698,11 @@ const SlotCompareHead = styled.div<{ $tone: 'before' | 'after' }>`
   background: rgba(0, 0, 0, 0.28);
   color: ${({ $tone }) =>
     $tone === 'before' ? 'rgba(251, 191, 36, 0.95)' : 'rgba(52, 211, 153, 0.95)'};
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    padding: 12px;
+  }
 `;
 
 const SlotCompareKind = styled.div`
@@ -441,6 +714,11 @@ const SlotCompareKind = styled.div`
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: flex-start;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    color: #cbd5e1;
+  }
 `;
 
 const SlotCompareCell = styled.div<{ $tone: 'before' | 'after' }>`
@@ -450,6 +728,12 @@ const SlotCompareCell = styled.div<{ $tone: 'before' | 'after' }>`
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: ${({ $tone }) =>
     $tone === 'before' ? 'rgba(251, 191, 36, 0.05)' : 'rgba(16, 185, 129, 0.07)'};
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #f1f5f9;
+  }
 `;
 
 const StatusSelect = styled.select`
@@ -477,6 +761,11 @@ const StatusSelect = styled.select`
     opacity: 0.55;
     cursor: not-allowed;
   }
+
+  @media (max-width: 640px) {
+    font-size: 16px;
+    min-height: 48px;
+  }
 `;
 
 const TextArea = styled.textarea`
@@ -491,6 +780,13 @@ const TextArea = styled.textarea`
   line-height: 1.5;
   resize: vertical;
   font-family: inherit;
+
+  @media (max-width: 640px) {
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100px;
+    padding: 12px 14px;
+  }
 `;
 
 const AdditionalInfoBlock = styled.div`
@@ -507,6 +803,11 @@ const AdditionalInfoTitle = styled.div`
   color: #f1f5f9;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    padding: 12px;
+  }
 `;
 
 const AdditionalInfoRow = styled.div`
@@ -520,6 +821,12 @@ const AdditionalInfoRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
 `;
 
 const AdditionalInfoLabel = styled.span`
@@ -532,6 +839,10 @@ const AdditionalInfoValue = styled.span`
   text-align: right;
   word-break: break-word;
   color: rgba(226, 232, 240, 0.95);
+
+  @media (max-width: 480px) {
+    text-align: left;
+  }
 `;
 
 const BtnRow = styled.div`
@@ -561,6 +872,12 @@ const Btn = styled.button<{ $variant?: 'primary' | 'ghost' }>`
     border-color: rgba(255, 255, 255, 0.14);
     color: rgba(226, 232, 240, 0.9);
   `}
+
+  @media (max-width: 640px) {
+    min-height: 46px;
+    padding: 12px 18px;
+    font-size: 14px;
+  }
 `;
 
 const Small = styled.div`
@@ -842,6 +1159,32 @@ export default function AdminBusRequestsPage() {
       </StatsGrid>
 
       <Card>
+        <MobileList aria-label="버스 변경 요청 목록(모바일)">
+          {isLoading ? (
+            <EmptyState>로딩 중…</EmptyState>
+          ) : filtered.length === 0 ? (
+            <EmptyState>
+              {statusFilter === 'all' && !searchQuery.trim() ? '등록된 요청이 없습니다.' : '조건에 맞는 요청이 없습니다.'}
+            </EmptyState>
+          ) : (
+            filtered.map((row, index) => (
+              <MobileItem key={row.id} type="button" onClick={() => openModal(row)}>
+                <MobileTop>
+                  <MobileLeft>
+                    <MobileOrder>{filtered.length - index}</MobileOrder>
+                    <Badge $color={statusBadgeColor(row.status)}>{statusDisplayLabel(row.status)}</Badge>
+                  </MobileLeft>
+                  <MobileDetailBtn>상세</MobileDetailBtn>
+                </MobileTop>
+                <MobileReason title={row.reason}>{row.reason || '—'}</MobileReason>
+                <MobileSub>
+                  <span>{row.id.slice(0, 8)}...</span>
+                  <span aria-hidden />
+                </MobileSub>
+              </MobileItem>
+            ))
+          )}
+        </MobileList>
         <TableWrap>
         <Table>
           <thead>

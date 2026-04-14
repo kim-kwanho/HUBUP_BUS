@@ -45,18 +45,30 @@ const Title = styled.h2`
   font-size: 18px;
   font-weight: 800;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    font-size: 19px;
+    line-height: 1.35;
+  }
 `;
 
 const Subtitle = styled.p`
   margin: 0;
   font-size: 13px;
   color: rgba(148, 163, 184, 0.95);
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #cbd5e1;
+  }
 `;
 
 const Tabs = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 18px;
+  flex-wrap: wrap;
 `;
 
 const Tab = styled.button<{ $active: boolean }>`
@@ -68,6 +80,12 @@ const Tab = styled.button<{ $active: boolean }>`
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 15px;
+  }
 `;
 
 const FilterBar = styled.div`
@@ -80,6 +98,13 @@ const FilterBar = styled.div`
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+  }
 `;
 
 const Field = styled.div`
@@ -92,6 +117,11 @@ const Label = styled.label`
   font-size: 11px;
   font-weight: 600;
   color: rgba(148, 163, 184, 0.95);
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    color: #cbd5e1;
+  }
 `;
 
 const Select = styled.select`
@@ -102,6 +132,14 @@ const Select = styled.select`
   background: rgba(5, 10, 25, 0.45);
   color: #f1f5f9;
   font-size: 13px;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 10px 12px;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -112,6 +150,14 @@ const SearchInput = styled.input`
   background: rgba(5, 10, 25, 0.45);
   color: #f1f5f9;
   font-size: 13px;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 14px;
+  }
 `;
 
 const BtnPrimary = styled.button`
@@ -123,6 +169,12 @@ const BtnPrimary = styled.button`
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+  }
 `;
 
 const BtnGhost = styled.button`
@@ -133,18 +185,33 @@ const BtnGhost = styled.button`
   color: rgba(226, 232, 240, 0.88);
   font-size: 13px;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    width: 100%;
+    min-height: 48px;
+    font-size: 15px;
+  }
 `;
 
 const TableWrap = styled.div`
   overflow: auto;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-overflow-scrolling: touch;
+
+  @media (max-width: 640px) {
+    display: none;
+  }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+  }
 `;
 
 const Th = styled.th`
@@ -154,6 +221,12 @@ const Th = styled.th`
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   color: rgba(148, 163, 184, 0.95);
   font-weight: 700;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    padding: 12px 10px;
+    color: #cbd5e1;
+  }
 `;
 
 const Td = styled.td`
@@ -161,6 +234,12 @@ const Td = styled.td`
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   vertical-align: middle;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    padding: 14px 10px;
+    line-height: 1.5;
+    color: #f1f5f9;
+  }
 `;
 
 const UserCell = styled.div`
@@ -201,6 +280,86 @@ const ActionBtn = styled.button`
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+`;
+
+const MobileList = styled.div`
+  display: none;
+
+  @media (max-width: 640px) {
+    display: block;
+  }
+`;
+
+const MobileItem = styled.button`
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 14px;
+  padding: 12px;
+  color: inherit;
+  cursor: pointer;
+
+  & + & {
+    margin-top: 10px;
+  }
+`;
+
+const MobileTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+const MobileName = styled.div`
+  font-size: 15px;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.4;
+`;
+
+const MobileEmail = styled.div`
+  margin-top: 2px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  word-break: break-all;
+`;
+
+const MobileMeta = styled.div`
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #e2e8f0;
+`;
+
+const MobileRoles = styled.div`
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
+const MobileDetailBtn = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 `;
 
 const Pagination = styled.div`
@@ -209,6 +368,7 @@ const Pagination = styled.div`
   justify-content: center;
   gap: 8px;
   margin-top: 16px;
+  flex-wrap: wrap;
 `;
 
 const PageBtn = styled.button<{ $active?: boolean }>`
@@ -219,6 +379,13 @@ const PageBtn = styled.button<{ $active?: boolean }>`
   background: ${({ $active }) => ($active ? 'rgba(34, 197, 94, 0.25)' : 'transparent')};
   color: #e2e8f0;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 15px;
+    padding: 10px;
+  }
 `;
 
 const Modal = styled.div`
@@ -230,17 +397,33 @@ const Modal = styled.div`
   align-items: center;
   justify-content: center;
   padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    align-items: flex-end;
+  }
 `;
 
 const ModalCard = styled.div`
   width: 100%;
   max-width: 520px;
-  max-height: 90vh;
+  max-height: min(90vh, 90dvh);
   overflow: auto;
   border-radius: 16px;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    max-height: min(92vh, 92dvh);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  }
 `;
 
 const ModalTitle = styled.h3`
@@ -640,6 +823,36 @@ export default function AdminUsersPage() {
             검색 결과: <strong style={{ color: '#e2e8f0' }}>{pagination?.total ?? 0}</strong>건
             {appliedSearch ? ` (검색: "${appliedSearch}")` : ''}
           </ListInfo>
+          <MobileList aria-label="회원 목록(모바일)">
+            {users.map((user) => (
+              <MobileItem key={`m-${user.user_id}`} type="button" onClick={() => openModal(user)}>
+                <MobileTop>
+                  <div style={{ minWidth: 0 }}>
+                    <MobileName>{user.name || '이름 없음'}</MobileName>
+                    <MobileEmail>{user.email || '이메일 없음'}</MobileEmail>
+                  </div>
+                  <MobileDetailBtn>{activeTab === 'accounts' ? '정보수정' : '권한수정'}</MobileDetailBtn>
+                </MobileTop>
+                <MobileMeta>
+                  공동체: {user.community || '—'}
+                  <br />
+                  그룹/다락방:{' '}
+                  {user.group_name && user.cell_name
+                    ? `${user.group_name} / ${user.cell_name}`
+                    : user.group_name || user.cell_name || '—'}
+                </MobileMeta>
+                {activeTab === 'permissions' ? (
+                  <MobileRoles>
+                    {user.roles && user.roles.length > 0 ? (
+                      user.roles.map((r) => <Badge key={`mb-${user.user_id}-${r}`}>{r}</Badge>)
+                    ) : (
+                      <span style={{ color: '#f87171', fontSize: 12 }}>권한 없음</span>
+                    )}
+                  </MobileRoles>
+                ) : null}
+              </MobileItem>
+            ))}
+          </MobileList>
           <TableWrap>
             <Table>
               <thead>

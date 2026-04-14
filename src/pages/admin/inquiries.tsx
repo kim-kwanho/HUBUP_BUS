@@ -68,12 +68,23 @@ const Title = styled.h2`
   font-size: 18px;
   font-weight: 800;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    font-size: 19px;
+    line-height: 1.35;
+  }
 `;
 
 const Subtitle = styled.p`
   margin: 0;
   font-size: 13px;
   color: rgba(148, 163, 184, 0.95);
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.55;
+    color: #cbd5e1;
+  }
 `;
 
 const FilterSection = styled.div`
@@ -92,6 +103,14 @@ const SearchInput = styled.input`
   background: rgba(5, 10, 25, 0.45);
   color: #f1f5f9;
   font-size: 14px;
+
+  @media (max-width: 640px) {
+    max-width: none;
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 14px;
+    line-height: 1.4;
+  }
 `;
 
 const FilterRow = styled.div`
@@ -99,6 +118,10 @@ const FilterRow = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+
+  @media (max-width: 640px) {
+    gap: 10px;
+  }
 `;
 
 const FilterLabel = styled.span`
@@ -106,6 +129,11 @@ const FilterLabel = styled.span`
   font-weight: 600;
   color: rgba(148, 163, 184, 0.95);
   margin-right: 4px;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    color: #cbd5e1;
+  }
 `;
 
 const FilterBtn = styled.button<{ $active: boolean }>`
@@ -118,6 +146,13 @@ const FilterBtn = styled.button<{ $active: boolean }>`
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 14px;
+    line-height: 1.25;
+  }
 `;
 
 const SearchMeta = styled.div`
@@ -126,6 +161,12 @@ const SearchMeta = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #cbd5e1;
+  }
 `;
 
 const ClearLink = styled.button`
@@ -136,6 +177,12 @@ const ClearLink = styled.button`
   font-weight: 600;
   cursor: pointer;
   text-decoration: underline;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    min-height: 44px;
+    padding: 0 4px;
+  }
 `;
 
 const StatsGrid = styled.div`
@@ -143,6 +190,12 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   gap: 10px;
   margin-bottom: 18px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
 `;
 
 const StatCard = styled.div`
@@ -150,18 +203,36 @@ const StatCard = styled.div`
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
 `;
 
 const StatValue = styled.div`
   font-size: 20px;
   font-weight: 800;
   color: #f1f5f9;
+  line-height: 1.15;
+
+  @media (max-width: 640px) {
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
 `;
 
 const StatLabel = styled.div`
   font-size: 11px;
   color: rgba(148, 163, 184, 0.95);
   margin-top: 4px;
+
+  @media (max-width: 640px) {
+    font-size: 11px;
+    margin-top: 2px;
+    color: #94a3b8;
+    line-height: 1.25;
+  }
 `;
 
 const Card = styled.section`
@@ -171,9 +242,23 @@ const Card = styled.section`
   overflow: hidden;
 `;
 
+const TableWrap = styled.div`
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  scrollbar-gutter: stable;
+
+  @media (max-width: 640px) {
+    margin: 0 -4px;
+    padding: 0 4px;
+    display: none;
+  }
+`;
+
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 720px;
 `;
 
 const Th = styled.th`
@@ -182,6 +267,13 @@ const Th = styled.th`
   opacity: 0.85;
   padding: 12px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    padding: 12px 14px;
+    color: #cbd5e1;
+    opacity: 1;
+  }
 `;
 
 const Td = styled.td`
@@ -189,6 +281,13 @@ const Td = styled.td`
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   vertical-align: middle;
   font-size: 13px;
+
+  @media (max-width: 640px) {
+    font-size: 14px;
+    line-height: 1.5;
+    padding: 14px;
+    color: #f1f5f9;
+  }
 `;
 
 const Badge = styled.span<{ $color: 'blue' | 'yellow' | 'green' | 'red' | 'purple' | 'gray' }>`
@@ -215,6 +314,11 @@ const Badge = styled.span<{ $color: 'blue' | 'yellow' | 'green' | 'red' | 'purpl
         return 'rgba(148, 163, 184, 0.15)';
     }
   }};
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
 `;
 
 const MsgCell = styled.div`
@@ -222,6 +326,17 @@ const MsgCell = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  @media (max-width: 640px) {
+    max-width: none;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #f1f5f9;
+  }
 `;
 
 const ActionRow = styled.div`
@@ -240,6 +355,95 @@ const ActionBtn = styled.button`
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+
+  @media (max-width: 640px) {
+    min-height: 42px;
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+`;
+
+const MobileList = styled.div`
+  display: none;
+
+  @media (max-width: 640px) {
+    display: block;
+    padding: 6px;
+  }
+`;
+
+const MobileItem = styled.button`
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 14px;
+  padding: 12px;
+  color: inherit;
+  cursor: pointer;
+
+  & + & {
+    margin-top: 10px;
+  }
+`;
+
+const MobileTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+`;
+
+const MobileLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+`;
+
+const MobileOrder = styled.div`
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 900;
+  color: #f8fafc;
+`;
+
+const MobileMessage = styled.div`
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #f1f5f9;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+`;
+
+const MobileSub = styled.div`
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #94a3b8;
+`;
+
+const MobileDetailBtn = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.15);
+  color: #ecfdf5;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
 `;
 
 const WorkflowBox = styled.div`
@@ -263,12 +467,17 @@ const StepItem = styled.div<{ $state: 'done' | 'current' | 'todo' }>`
   text-align: center;
   font-size: 11px;
   font-weight: 600;
+  line-height: 1.35;
   color: ${({ $state }) =>
     $state === 'done'
       ? 'rgba(134, 239, 172, 0.95)'
       : $state === 'current'
         ? '#f1f5f9'
         : 'rgba(148, 163, 184, 0.65)'};
+
+  @media (max-width: 640px) {
+    font-size: 12px;
+  }
 `;
 
 const StepDot = styled.div<{ $state: 'done' | 'current' | 'todo' }>`
@@ -289,6 +498,12 @@ const EmptyState = styled.div`
   text-align: center;
   color: rgba(148, 163, 184, 0.95);
   font-size: 14px;
+
+  @media (max-width: 640px) {
+    font-size: 15px;
+    line-height: 1.55;
+    color: #cbd5e1;
+  }
 `;
 
 const LoadingRow = styled.tr`
@@ -308,23 +523,40 @@ const Modal = styled.div`
   align-items: center;
   justify-content: center;
   padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    align-items: flex-end;
+  }
 `;
 
 const ModalCard = styled.div`
   width: 100%;
   max-width: 640px;
-  max-height: 90vh;
+  max-height: min(90vh, 90dvh);
   overflow: auto;
   border-radius: 16px;
   background: #0f172a;
   border: 1px solid rgba(255, 255, 255, 0.12);
   padding: 20px;
+  box-sizing: border-box;
+
+  @media (max-width: 480px) {
+    max-height: min(92vh, 92dvh);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 16px max(20px, env(safe-area-inset-bottom));
+  }
 `;
 
 const ModalHead = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
   margin-bottom: 16px;
 `;
 
@@ -333,6 +565,13 @@ const ModalTitle = styled.h3`
   font-size: 17px;
   font-weight: 800;
   color: #f1f5f9;
+  line-height: 1.35;
+  padding-right: 8px;
+
+  @media (max-width: 640px) {
+    font-size: 18px;
+    line-height: 1.4;
+  }
 `;
 
 const CloseBtn = styled.button`
@@ -342,6 +581,14 @@ const CloseBtn = styled.button`
   font-size: 24px;
   line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: -8px -4px -8px 0;
+  border-radius: 10px;
 `;
 
 const FormGroup = styled.div`
@@ -354,6 +601,12 @@ const Label = styled.label`
   font-weight: 600;
   color: rgba(148, 163, 184, 0.95);
   margin-bottom: 6px;
+
+  @media (max-width: 640px) {
+    font-size: 13px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+  }
 `;
 
 const MessageBox = styled.div`
@@ -365,6 +618,12 @@ const MessageBox = styled.div`
   line-height: 1.55;
   white-space: pre-wrap;
   color: #e2e8f0;
+
+  @media (max-width: 640px) {
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 14px;
+  }
 `;
 
 const Select = styled.select`
@@ -375,6 +634,12 @@ const Select = styled.select`
   background: rgba(5, 10, 25, 0.45);
   color: #f1f5f9;
   font-size: 14px;
+
+  @media (max-width: 640px) {
+    font-size: 16px;
+    min-height: 48px;
+    padding: 12px 14px;
+  }
 `;
 
 const TextArea = styled.textarea`
@@ -388,6 +653,13 @@ const TextArea = styled.textarea`
   font-size: 14px;
   resize: vertical;
   box-sizing: border-box;
+
+  @media (max-width: 640px) {
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 112px;
+    padding: 12px 14px;
+  }
 `;
 
 const InfoRow = styled.div`
@@ -425,6 +697,14 @@ const AdditionalInfoRow = styled.div`
   &:last-child {
     border-bottom: none;
   }
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
 `;
 
 const AdditionalInfoLabel = styled.span`
@@ -437,6 +717,10 @@ const AdditionalInfoValue = styled.span`
   text-align: right;
   word-break: break-word;
   color: rgba(226, 232, 240, 0.95);
+
+  @media (max-width: 480px) {
+    text-align: left;
+  }
 `;
 
 const BtnRow = styled.div`
@@ -472,6 +756,12 @@ const Btn = styled.button<{ $variant?: 'primary' | 'ghost' | 'danger' }>`
     border-color: rgba(255, 255, 255, 0.14);
     color: rgba(226, 232, 240, 0.9);
   `}
+
+  @media (max-width: 640px) {
+    min-height: 46px;
+    padding: 12px 18px;
+    font-size: 14px;
+  }
 `;
 
 const Small = styled.div`
@@ -839,6 +1129,38 @@ export default function AdminInquiriesPage() {
       </StatsGrid>
 
       <Card>
+        <MobileList aria-label="문의사항 목록(모바일)">
+          {isLoading ? (
+            <EmptyState>로딩 중…</EmptyState>
+          ) : filtered.length === 0 ? (
+            <EmptyState>
+              {statusFilter === 'all' && categoryFilter === 'all' && !searchQuery.trim()
+                ? '등록된 문의가 없습니다.'
+                : '조건에 맞는 문의가 없습니다.'}
+            </EmptyState>
+          ) : (
+            filtered.map((row, index) => (
+              <MobileItem key={`m-${row.id}`} type="button" onClick={() => openModal(row)}>
+                <MobileTop>
+                  <MobileLeft>
+                    <MobileOrder>{filtered.length - index}</MobileOrder>
+                    <Badge $color={categoryBadgeColor(row.subject)}>{categoryLabel(row.subject)}</Badge>
+                    <Badge $color={STATUS_COLORS[row.status] ?? 'gray'}>
+                      {INQUIRY_STATUS_LABELS[row.status] ?? row.status}
+                    </Badge>
+                  </MobileLeft>
+                  <MobileDetailBtn>상세</MobileDetailBtn>
+                </MobileTop>
+                <MobileMessage>{row.message}</MobileMessage>
+                <MobileSub>
+                  <span>{seoulDate(row.created_at)}</span>
+                  {row.admin_response?.trim() ? <span>답변 있음</span> : <span>답변 없음</span>}
+                </MobileSub>
+              </MobileItem>
+            ))
+          )}
+        </MobileList>
+        <TableWrap>
         <Table>
           <thead>
             <tr>
@@ -902,6 +1224,7 @@ export default function AdminInquiriesPage() {
             )}
           </tbody>
         </Table>
+        </TableWrap>
       </Card>
 
       {modalOpen && selected ? (
