@@ -154,7 +154,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ] = await Promise.all([
         supabaseAdmin
           .from('hub_up_registrations')
-          .select('departure_slot, return_slot')
+          .select('departure_slot, return_slot, car_role, car_passenger_count, car_passenger_names, car_plate_number, car_arrival_time, car_departure_time')
           .eq('user_id', userId)
           .maybeSingle(),
         supabaseAdmin
@@ -237,14 +237,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const departureSlot = reg?.departure_slot ?? null;
       const returnSlot = reg?.return_slot ?? null;
 
+      // 자차 슬롯 라벨 처리
+      const CAR_LABEL = '자차 / 대중교통';
+      const depLabel = departureSlot === 'car' ? CAR_LABEL : labelForValue(departureSlot, depList);
+      const retLabel = returnSlot === 'car' ? CAR_LABEL : labelForValue(returnSlot, retList);
+
       return res.status(200).json({
         success: true,
         data: {
           hasRegistration: Boolean(reg),
           currentDeparture: departureSlot
-            ? { value: departureSlot, label: labelForValue(departureSlot, depList) }
+            ? { value: departureSlot, label: depLabel }
             : null,
-          currentReturn: returnSlot ? { value: returnSlot, label: labelForValue(returnSlot, retList) } : null,
+          currentReturn: returnSlot
+            ? { value: returnSlot, label: retLabel }
+            : null,
+          // 자차 세부 정보
+          carRole: reg?.car_role ?? null,
+          carPassengerCount: reg?.car_passenger_count ?? null,
+          carPassengerNames: reg?.car_passenger_names ?? null,
+          carPlateNumber: reg?.car_plate_number ?? null,
+          carArrivalTime: reg?.car_arrival_time ?? null,
+          carDepartureTime: reg?.car_departure_time ?? null,
           departureOptions: depList,
           returnOptions: retList,
           pendingRequest: pending,
@@ -255,7 +269,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'POST') {
-      const { requestedDepartureSlot, requestedReturnSlot, reason } = req.body || {};
+      const {
+        requestedDepartureSlot,
+        requestedReturnSlot,
+        reason,
+        // 자차 관련 필드
+        carRole,
+        carPassengerCount,
+        carPassengerNames,
+        carPlateNumber,
+        carArrivalTime,
+        carDepartureTime,
+      } = req.body || {};
 
       if (typeof reason !== 'string' || !reason.trim()) {
         return res.status(400).json({ success: false, message: '변경 사유를 입력해 주세요.' });
@@ -284,11 +309,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const reqDep = normalizeChoice(requestedDepartureSlot, currentDep);
       const reqRet = normalizeChoice(requestedReturnSlot, currentRet);
 
-      if (reqDep == null && reqRet == null) {
+      // 자차 변경 여부 확인 (자차 관련 필드가 하나라도 변경되면 변경으로 간주)
+      const isCarChange =
+        (typeof carRole === 'string' && carRole !== (reg.car_role ?? '')) ||
+        (typeof carArrivalTime === 'string' && carArrivalTime !== (reg.car_arrival_time ?? '')) ||
+        (typeof carDepartureTime === 'string' && carDepartureTime !== (reg.car_departure_time ?? '')) ||
+        (typeof carPlateNumber === 'string' && carPlateNumber !== (reg.car_plate_number ?? '')) ||
+        (typeof carPassengerCount === 'string' && carPassengerCount !== String(reg.car_passenger_count ?? '')) ||
+        (typeof carPassengerNames === 'string' && carPassengerNames !== (reg.car_passenger_names ?? ''));
+
+      if (reqDep == null && reqRet == null && !isCarChange) {
         return res.status(400).json({
           success: false,
-          message: '출발 또는 복귀 중 최소 한쪽은 현재와 다른 시간을 선택해 주세요.'
+          message: '출발 또는 복귀 중 최소 한쪽은 현재와 다른 시간을 선택하거나, 자차 정보를 변경해 주세요.'
         });
+      }
+
+      // 자차 슬롯 선택 시 필수 필드 검증
+      const newDepSlot = reqDep ?? currentDep;
+      const newRetSlot = reqRet ?? currentRet;
+      if (newDepSlot === 'car' || newRetSlot === 'car') {
+        const effectiveCarRole = typeof carRole === 'string' ? carRole : (reg.car_role ?? '');
+        if (!effectiveCarRole) {
+          return res.status(400).json({ success: false, message: '자차/대중교통 해당사항을 선택해 주세요.' });
+        }
+        if (newDepSlot === 'car') {
+          const effectiveArrival = typeof carArrivalTime === 'string' ? carArrivalTime : (reg.car_arrival_time ?? '');
+          if (!effectiveArrival) {
+            return res.status(400).json({ success: false, message: '입소 예정 시간을 선택해 주세요.' });
+          }
+        }
+        if (newRetSlot === 'car') {
+          const effectiveDeparture = typeof carDepartureTime === 'string' ? carDepartureTime : (reg.car_departure_time ?? '');
+          if (!effectiveDeparture) {
+            return res.status(400).json({ success: false, message: '퇴소 예정 시간을 선택해 주세요.' });
+          }
+        }
+        if (effectiveCarRole === '자가운전자') {
+          const effectivePlate = typeof carPlateNumber === 'string' ? carPlateNumber : (reg.car_plate_number ?? '');
+          if (!effectivePlate) {
+            return res.status(400).json({ success: false, message: '차량 번호를 입력해 주세요.' });
+          }
+        }
       }
 
       const { data: existingPending } = await supabaseAdmin
@@ -305,13 +367,42 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
+      // 자차 관련 변경 사항을 reason에 포함
+      const carChangeSummary: string[] = [];
+      if (typeof carRole === 'string' && carRole !== (reg.car_role ?? '')) {
+        carChangeSummary.push(`자차 역할: ${reg.car_role ?? '없음'} → ${carRole}`);
+      }
+      if (typeof carArrivalTime === 'string' && carArrivalTime !== (reg.car_arrival_time ?? '')) {
+        carChangeSummary.push(`입소 시간: ${reg.car_arrival_time ?? '없음'} → ${carArrivalTime}`);
+      }
+      if (typeof carDepartureTime === 'string' && carDepartureTime !== (reg.car_departure_time ?? '')) {
+        carChangeSummary.push(`퇴소 시간: ${reg.car_departure_time ?? '없음'} → ${carDepartureTime}`);
+      }
+      if (typeof carPlateNumber === 'string' && carPlateNumber !== (reg.car_plate_number ?? '')) {
+        carChangeSummary.push(`차량 번호: ${reg.car_plate_number ?? '없음'} → ${carPlateNumber}`);
+      }
+      if (typeof carPassengerCount === 'string' && carPassengerCount !== String(reg.car_passenger_count ?? '')) {
+        carChangeSummary.push(`탑승 인원: ${reg.car_passenger_count ?? '없음'} → ${carPassengerCount}명`);
+      }
+
+      const fullReason = carChangeSummary.length > 0
+        ? `${reason.trim()}\n[자차 변경] ${carChangeSummary.join(', ')}`
+        : reason.trim();
+
       const insertRow = buildHubUpBusChangeInsertRow(reg as Record<string, unknown>, {
         userId,
         currentDepartureSlot: currentDep,
         currentReturnSlot: currentRet,
         requestedDepartureSlot: reqDep,
         requestedReturnSlot: reqRet,
-        reason: reason.trim()
+        reason: fullReason,
+        // 자차 관련 필드 (변경된 값 또는 기존 값 유지)
+        carRole: typeof carRole === 'string' ? carRole : undefined,
+        carPassengerCount: typeof carPassengerCount === 'string' ? carPassengerCount : undefined,
+        carPassengerNames: typeof carPassengerNames === 'string' ? carPassengerNames : undefined,
+        carPlateNumber: typeof carPlateNumber === 'string' ? carPlateNumber : undefined,
+        carArrivalTime: typeof carArrivalTime === 'string' ? carArrivalTime : undefined,
+        carDepartureTime: typeof carDepartureTime === 'string' ? carDepartureTime : undefined,
       });
 
       const { data: inserted, error: insertError } = await insertBusChangeRequestRow(insertRow);
