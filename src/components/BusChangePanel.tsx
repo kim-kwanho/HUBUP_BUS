@@ -407,7 +407,8 @@ function formatApprovedLine(
   return `최근 요청이 승인되었습니다. 반영된 시간: ${parts.join(' / ')}`;
 }
 
-function formatRejectedLine(
+/** 반려 티켓 2번째 줄: `요청: 출발 → …, 복귀 → …` */
+function formatRejectedRequestLine(
   p: PendingRow,
   depOpts: SlotOpt[],
   retOpts: SlotOpt[]
@@ -422,7 +423,7 @@ function formatRejectedLine(
   if (dep) parts.push(`출발 → ${dep}`);
   if (ret) parts.push(`복귀 → ${ret}`);
   const req = parts.length ? parts.join(', ') : '변경 없음(사유만)';
-  return `최근 요청이 반려되었습니다. 요청: ${req}`;
+  return `요청: ${req}`;
 }
 
 type Props = {
@@ -644,7 +645,9 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
           ) : hasRecentRejected && recentProcessed ? (
             <>
               <TicketStubText>
-                {formatRejectedLine(recentProcessed, data.departureOptions, data.returnOptions)}
+                최근 요청이 반려되었습니다.
+                <br />
+                {formatRejectedRequestLine(recentProcessed, data.departureOptions, data.returnOptions)}
               </TicketStubText>
               {recentProcessed.processed_note && recentProcessed.processed_note.trim() ? (
                 <TicketStubHint>반려 사유: {recentProcessed.processed_note}</TicketStubHint>
