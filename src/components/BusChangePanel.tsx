@@ -20,6 +20,8 @@ type PendingRow = {
   reason: string;
   status: string;
   created_at: string;
+  processed_at?: string | null;
+  processed_note?: string | null;
 };
 
 type BusData = {
@@ -37,6 +39,7 @@ type BusData = {
   returnOptions: SlotOpt[];
   pendingRequest: PendingRow | null;
   recentApprovedRequest?: PendingRow | null;
+  recentProcessedRequest?: PendingRow | null;
   meta?: { warning?: string };
 };
 
@@ -404,6 +407,24 @@ function formatApprovedLine(
   return `최근 요청이 승인되었습니다. 반영된 시간: ${parts.join(' / ')}`;
 }
 
+function formatRejectedLine(
+  p: PendingRow,
+  depOpts: SlotOpt[],
+  retOpts: SlotOpt[]
+): string {
+  const dep = p.requested_departure_slot
+    ? depOpts.find((o) => o.value === p.requested_departure_slot)?.label ?? p.requested_departure_slot
+    : null;
+  const ret = p.requested_return_slot
+    ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
+    : null;
+  const parts: string[] = [];
+  if (dep) parts.push(`출발 → ${dep}`);
+  if (ret) parts.push(`복귀 → ${ret}`);
+  const req = parts.length ? parts.join(', ') : '변경 없음(사유만)';
+  return `최근 요청이 반려되었습니다. 요청: ${req}`;
+}
+
 type Props = {
   userId: string | null;
   ssoLoading: boolean;
@@ -563,7 +584,10 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
   const depSelectOpts = withNoChange(data.departureOptions);
   const retSelectOpts = withNoChange(data.returnOptions);
   const hasPending = Boolean(data.pendingRequest);
-  const hasRecentApproved = Boolean(data.recentApprovedRequest);
+  const recentProcessed = data.recentProcessedRequest ?? data.recentApprovedRequest ?? null;
+  const recentProcessedStatus = (recentProcessed?.status ?? '').toLowerCase();
+  const hasRecentApproved = !hasPending && recentProcessedStatus === 'approved';
+  const hasRecentRejected = !hasPending && recentProcessedStatus === 'rejected';
   const canSubmit = data.hasRegistration && !hasPending;
 
   // 현재 선택된 슬롯 (폼에서 변경 중인 값 또는 기존 값)
@@ -617,10 +641,21 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
               </TicketStubText>
               <TicketStubHint>담당자 확인 후 처리됩니다.</TicketStubHint>
             </>
-          ) : hasRecentApproved && data.recentApprovedRequest ? (
+          ) : hasRecentRejected && recentProcessed ? (
             <>
               <TicketStubText>
-                {formatApprovedLine(data.recentApprovedRequest, data.departureOptions, data.returnOptions)}
+                {formatRejectedLine(recentProcessed, data.departureOptions, data.returnOptions)}
+              </TicketStubText>
+              {recentProcessed.processed_note && recentProcessed.processed_note.trim() ? (
+                <TicketStubHint>반려 사유: {recentProcessed.processed_note}</TicketStubHint>
+              ) : (
+                <TicketStubHint>필요 시 사유를 확인하고 다시 요청해 주세요.</TicketStubHint>
+              )}
+            </>
+          ) : hasRecentApproved && recentProcessed ? (
+            <>
+              <TicketStubText>
+                {formatApprovedLine(recentProcessed, data.departureOptions, data.returnOptions)}
               </TicketStubText>
               <TicketStubHint>승인된 변경 시간이 현재 버스 정보에 반영되어 있습니다.</TicketStubHint>
             </>

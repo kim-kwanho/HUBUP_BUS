@@ -183,22 +183,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         });
       }
 
-      let pending: {
+      type RequestRow = {
         id: string;
         requested_departure_slot: string | null;
         requested_return_slot: string | null;
         reason: string;
         status: string;
         created_at: string;
-      } | null = null;
-      let recentApproved: {
-        id: string;
-        requested_departure_slot: string | null;
-        requested_return_slot: string | null;
-        reason: string;
-        status: string;
-        created_at: string;
-      } | null = null;
+        processed_at?: string | null;
+        processed_note?: string | null;
+      };
+
+      let pending: RequestRow | null = null;
+      let recentProcessed: RequestRow | null = null;
       let pendingWarning: string | undefined;
 
       const pendingRes = await supabaseAdmin
@@ -216,20 +213,60 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pending = pendingRes.data ?? null;
       }
 
-      const approvedRes = await supabaseAdmin
-        .from('hub_up_bus_change_requests')
-        .select('id, requested_departure_slot, requested_return_slot, reason, status, created_at')
-        .eq('user_id', userId)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      /**
+       * 반려/승인/완료 중 가장 최근 건을 내려줌.
+       * `processed_note` 컬럼이 없는 구 스키마도 있을 수 있어서 실패 시 기본 컬럼만으로 재시도한다.
+       */
+      async function fetchLatestProcessed(): Promise<{
+        data: RequestRow | null;
+        error: { message: string } | null;
+      }> {
+        const withNote = await supabaseAdmin
+          .from('hub_up_bus_change_requests')
+          .select(
+            'id, requested_departure_slot, requested_return_slot, reason, status, created_at, processed_at, processed_note'
+          )
+          .eq('user_id', userId)
+          .in('status', ['approved', 'rejected', 'completed'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-      if (approvedRes.error) {
-        console.error('[bus-change GET approved]', approvedRes.error);
-      } else {
-        recentApproved = approvedRes.data ?? null;
+        if (!withNote.error) {
+          return { data: (withNote.data ?? null) as RequestRow | null, error: null };
+        }
+
+        const msg = (withNote.error.message || '').toLowerCase();
+        const noteMissing =
+          msg.includes('processed_note') || msg.includes('processed_at');
+        if (!noteMissing) {
+          return { data: null, error: { message: withNote.error.message } };
+        }
+
+        const fallback = await supabaseAdmin
+          .from('hub_up_bus_change_requests')
+          .select('id, requested_departure_slot, requested_return_slot, reason, status, created_at')
+          .eq('user_id', userId)
+          .in('status', ['approved', 'rejected', 'completed'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallback.error) {
+          return { data: null, error: { message: fallback.error.message } };
+        }
+        return { data: (fallback.data ?? null) as RequestRow | null, error: null };
       }
+
+      const processedRes = await fetchLatestProcessed();
+      if (processedRes.error) {
+        console.error('[bus-change GET processed]', processedRes.error);
+      } else {
+        recentProcessed = processedRes.data;
+      }
+
+      const recentApproved =
+        recentProcessed && recentProcessed.status === 'approved' ? recentProcessed : null;
 
       const depList = (depSlots || []) as { value: string; label: string }[];
       const retList = (retSlots || []) as { value: string; label: string }[];
@@ -263,6 +300,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           returnOptions: retList,
           pendingRequest: pending,
           recentApprovedRequest: pending ? null : recentApproved,
+          recentProcessedRequest: pending ? null : recentProcessed,
           ...(pendingWarning ? { meta: { warning: pendingWarning } } : {})
         }
       });
