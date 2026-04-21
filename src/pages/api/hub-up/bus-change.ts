@@ -216,11 +216,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       /**
        * 반려/승인/완료 중 가장 최근 건을 내려줌.
        * `processed_note` 컬럼이 없는 구 스키마도 있을 수 있어서 실패 시 기본 컬럼만으로 재시도한다.
+       * (블록 안의 function 선언은 ES5 strict에서 빌드 오류가 나므로 const arrow 사용)
        */
-      async function fetchLatestProcessed(): Promise<{
+      const fetchLatestProcessed = async (): Promise<{
         data: RequestRow | null;
         error: { message: string } | null;
-      }> {
+      }> => {
         const withNote = await supabaseAdmin
           .from('hub_up_bus_change_requests')
           .select(
@@ -256,7 +257,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return { data: null, error: { message: fallback.error.message } };
         }
         return { data: (fallback.data ?? null) as RequestRow | null, error: null };
-      }
+      };
 
       const processedRes = await fetchLatestProcessed();
       if (processedRes.error) {
