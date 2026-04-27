@@ -142,6 +142,30 @@ function slotValueOrNull(value: unknown): string | null {
   return text;
 }
 
+/** 승인 시 `hub_up_registrations`에 반영할 자차 필드 (`hub_up_bus_change_requests`와 동일 키) */
+const REGISTRATION_CAR_FIELDS = [
+  'car_role',
+  'car_passenger_count',
+  'car_passenger_names',
+  'car_plate_number',
+  'car_arrival_time',
+  'car_departure_time'
+] as const;
+
+function appendCarFieldsFromRequest(
+  requestRow: Record<string, unknown>,
+  payload: Record<string, unknown>
+): void {
+  for (const k of REGISTRATION_CAR_FIELDS) {
+    if (!(k in requestRow)) continue;
+    const v = requestRow[k];
+    // 요청 row에 저장된 값만 반영(SQL NULL은 스킵 → 등록 테이블 기존 값 유지)
+    if (v !== null && v !== undefined) {
+      payload[k] = v;
+    }
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (!supabaseEnvOk()) {
     return res.status(503).json({
@@ -225,9 +249,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { data: requestRow, error: requestRowError } = await supabaseAdmin
         .from('hub_up_bus_change_requests')
-        .select(
-          'id, user_id, requested_departure_slot, requested_return_slot, current_departure_slot, current_return_slot'
-        )
+        .select('*')
         .eq('id', id)
         .single();
 
@@ -247,28 +269,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const requestedDeparture = slotValueOrNull(requestRow.requested_departure_slot);
       const requestedReturn = slotValueOrNull(requestRow.requested_return_slot);
-      const currentDeparture = slotValueOrNull(requestRow.current_departure_slot);
-      const currentReturn = slotValueOrNull(requestRow.current_return_slot);
 
       let registrationRollbackPayload: Record<string, unknown> | null = null;
       if (shouldApplyRegistrationSlots) {
+        const reqRecord = requestRow as Record<string, unknown>;
+
+        const { data: prevReg, error: prevRegError } = await supabaseAdmin
+          .from('hub_up_registrations')
+          .select(
+            'departure_slot, return_slot, car_role, car_passenger_count, car_passenger_names, car_plate_number, car_arrival_time, car_departure_time'
+          )
+          .eq('user_id', requestUserId)
+          .maybeSingle();
+
+        if (prevRegError) {
+          console.error('[admin bus-change-requests PUT] fetch registrations failed:', prevRegError);
+          return res.status(500).json({
+            success: false,
+            message: '승인 처리 전 신청 정보를 불러오지 못했습니다.'
+          });
+        }
+        if (!prevReg) {
+          return res.status(400).json({
+            success: false,
+            message: '해당 사용자의 허브업 신청(registrations)이 없어 승인할 수 없습니다.'
+          });
+        }
+
         const registrationUpdatePayload: Record<string, unknown> = {};
         if (requestedDeparture != null) registrationUpdatePayload.departure_slot = requestedDeparture;
         if (requestedReturn != null) registrationUpdatePayload.return_slot = requestedReturn;
+        appendCarFieldsFromRequest(reqRecord, registrationUpdatePayload);
 
         if (Object.keys(registrationUpdatePayload).length === 0) {
           return res.status(400).json({
             success: false,
-            message: '승인할 버스 시간 변경 값이 없습니다.'
+            message: '승인할 버스 시간·자차 변경 값이 없습니다.'
           });
         }
 
         registrationRollbackPayload = {};
-        if ('departure_slot' in registrationUpdatePayload) {
-          registrationRollbackPayload.departure_slot = currentDeparture;
-        }
-        if ('return_slot' in registrationUpdatePayload) {
-          registrationRollbackPayload.return_slot = currentReturn;
+        for (const key of Object.keys(registrationUpdatePayload)) {
+          registrationRollbackPayload[key] = prevReg[key as keyof typeof prevReg] ?? null;
         }
 
         const { error: registrationUpdateError } = await supabaseAdmin
