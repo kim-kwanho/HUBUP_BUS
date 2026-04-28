@@ -1,11 +1,12 @@
 /**
  * 문의사항 관리(admin/inquiries)와 동일 UX: 통계·검색·필터·테이블·상세 모달
  */
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import AdminShell from '@src/components/admin/AdminShell';
+import { formatParsedCarChangesLine, parseCarChangeBracketLine } from '@src/lib/hub-up-car-change-parse';
 
 type Row = {
   id: string;
@@ -28,6 +29,12 @@ type Row = {
   updated_at: string;
   processed_at?: string | null;
   processed_note?: string | null;
+  car_role?: string | null;
+  car_arrival_time?: string | null;
+  car_departure_time?: string | null;
+  car_plate_number?: string | null;
+  car_passenger_count?: string | number | null;
+  car_passenger_names?: string | null;
 };
 
 type BadgeTone = 'blue' | 'yellow' | 'green' | 'red' | 'purple' | 'gray';
@@ -996,7 +1003,8 @@ export default function AdminBusRequestsPage() {
           row.requested_departure_label,
           row.requested_return_label,
           row.current_departure_label,
-          row.current_return_label
+          row.current_return_label,
+          formatParsedCarChangesLine(parseCarChangeBracketLine(row.reason))
         ]
           .filter(Boolean)
           .join(' ')
@@ -1013,6 +1021,11 @@ export default function AdminBusRequestsPage() {
     if (idx < 0) return null;
     return filtered.length - idx;
   }, [selected, filtered]);
+
+  const carParsedForModal = useMemo(() => {
+    if (!modalOpen || !selected) return [];
+    return parseCarChangeBracketLine(selected.reason);
+  }, [modalOpen, selected]);
 
   const statusPickerOptions = useMemo(() => {
     const base = STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
@@ -1290,6 +1303,26 @@ export default function AdminBusRequestsPage() {
                 </SlotCompareGrid>
               </SlotCompareBox>
             </FormGroup>
+
+            {carParsedForModal.length > 0 ? (
+                <FormGroup>
+                  <Label>자차 / 대중교통 (변경 전 → 요청)</Label>
+                  <SlotCompareBox>
+                    <SlotCompareGrid>
+                      <SlotCompareCorner aria-hidden />
+                      <SlotCompareHead $tone="before">변경 전</SlotCompareHead>
+                      <SlotCompareHead $tone="after">요청</SlotCompareHead>
+                      {carParsedForModal.map((row) => (
+                        <Fragment key={`${row.label}:${row.before}→${row.after}`}>
+                          <SlotCompareKind>{row.label}</SlotCompareKind>
+                          <SlotCompareCell $tone="before">{row.before.trim() ? row.before : '—'}</SlotCompareCell>
+                          <SlotCompareCell $tone="after">{row.after.trim() ? row.after : '—'}</SlotCompareCell>
+                        </Fragment>
+                      ))}
+                    </SlotCompareGrid>
+                  </SlotCompareBox>
+                </FormGroup>
+            ) : null}
 
             <FormGroup>
               <AdditionalInfoBlock>

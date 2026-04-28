@@ -35,6 +35,14 @@ function supabaseEnvOk(): boolean {
   return Boolean(url && key);
 }
 
+function isSelectMissingColumnError(error: { message?: string } | null | undefined): boolean {
+  const m = (error?.message ?? '').toLowerCase();
+  return (
+    m.includes('column') &&
+    (m.includes('could not find') || m.includes('schema cache') || m.includes('does not exist'))
+  );
+}
+
 function isBusInsertMissingColumnError(error: { message?: string } | null | undefined, column: string): boolean {
   const m = (error?.message ?? '').toLowerCase();
   const col = column.toLowerCase();
@@ -192,18 +200,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         created_at: string;
         processed_at?: string | null;
         processed_note?: string | null;
+        car_role?: string | null;
+        car_arrival_time?: string | null;
+        car_departure_time?: string | null;
+        car_plate_number?: string | null;
+        car_passenger_count?: string | number | null;
+        car_passenger_names?: string | null;
       };
 
       let pending: RequestRow | null = null;
       let recentProcessed: RequestRow | null = null;
       let pendingWarning: string | undefined;
 
-      const pendingRes = await supabaseAdmin
+      const pendingMin =
+        'id, requested_departure_slot, requested_return_slot, reason, status, created_at';
+      const pendingCar =
+        ', car_role, car_arrival_time, car_departure_time, car_plate_number, car_passenger_count, car_passenger_names';
+
+      let pendingRes = await supabaseAdmin
         .from('hub_up_bus_change_requests')
-        .select('id, requested_departure_slot, requested_return_slot, reason, status, created_at')
+        .select(`${pendingMin}${pendingCar}`)
         .eq('user_id', userId)
         .eq('status', 'pending')
         .maybeSingle();
+
+      if (pendingRes.error && isSelectMissingColumnError(pendingRes.error)) {
+        pendingRes = await supabaseAdmin
+          .from('hub_up_bus_change_requests')
+          .select(pendingMin)
+          .eq('user_id', userId)
+          .eq('status', 'pending')
+          .maybeSingle();
+      }
 
       if (pendingRes.error) {
         console.error('[bus-change GET pending]', pendingRes.error);
@@ -222,16 +250,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         data: RequestRow | null;
         error: { message: string } | null;
       }> => {
-        const withNote = await supabaseAdmin
+        const procBase =
+          'id, requested_departure_slot, requested_return_slot, reason, status, created_at';
+        const procNote = ', processed_at, processed_note';
+        const procCar =
+          ', car_role, car_arrival_time, car_departure_time, car_plate_number, car_passenger_count, car_passenger_names';
+
+        let withNote = await supabaseAdmin
           .from('hub_up_bus_change_requests')
-          .select(
-            'id, requested_departure_slot, requested_return_slot, reason, status, created_at, processed_at, processed_note'
-          )
+          .select(`${procBase}${procNote}${procCar}`)
           .eq('user_id', userId)
           .in('status', ['approved', 'rejected', 'completed'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        if (withNote.error && isSelectMissingColumnError(withNote.error)) {
+          withNote = await supabaseAdmin
+            .from('hub_up_bus_change_requests')
+            .select(`${procBase}${procNote}`)
+            .eq('user_id', userId)
+            .in('status', ['approved', 'rejected', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
 
         if (!withNote.error) {
           return { data: (withNote.data ?? null) as RequestRow | null, error: null };
@@ -244,14 +287,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           return { data: null, error: { message: withNote.error.message } };
         }
 
-        const fallback = await supabaseAdmin
+        let fallback = await supabaseAdmin
           .from('hub_up_bus_change_requests')
-          .select('id, requested_departure_slot, requested_return_slot, reason, status, created_at')
+          .select(`${procBase}${procCar}`)
           .eq('user_id', userId)
           .in('status', ['approved', 'rejected', 'completed'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        if (fallback.error && isSelectMissingColumnError(fallback.error)) {
+          fallback = await supabaseAdmin
+            .from('hub_up_bus_change_requests')
+            .select(procBase)
+            .eq('user_id', userId)
+            .in('status', ['approved', 'rejected', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
 
         if (fallback.error) {
           return { data: null, error: { message: fallback.error.message } };

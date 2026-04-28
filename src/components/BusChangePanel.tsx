@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useId, useState } from 'react';
 import styled from '@emotion/styled';
+import {
+  buildCarChangeSummaryComparedToRegistration,
+  buildCarChangeSummaryFromReasonOnly
+} from '@src/lib/hub-up-car-change-parse';
 import TimePicker from './TimePicker';
 
 type SlotOpt = { value: string; label: string };
@@ -22,6 +26,12 @@ type PendingRow = {
   created_at: string;
   processed_at?: string | null;
   processed_note?: string | null;
+  car_role?: string | null;
+  car_arrival_time?: string | null;
+  car_departure_time?: string | null;
+  car_plate_number?: string | null;
+  car_passenger_count?: string | number | null;
+  car_passenger_names?: string | null;
 };
 
 type BusData = {
@@ -371,10 +381,20 @@ const ErrorText = styled.p`
 function withNoChange(opts: SlotOpt[]): { value: string; label: string }[] {
   return [{ value: '', label: '변경 없음' }, ...opts];
 }
+type RegCarSnap = {
+  carRole: string | null;
+  carArrivalTime: string | null;
+  carDepartureTime: string | null;
+  carPlateNumber: string | null;
+  carPassengerCount: string | number | null;
+  carPassengerNames: string | null;
+};
+
 function formatPendingLine(
   p: PendingRow,
   depOpts: SlotOpt[],
-  retOpts: SlotOpt[]
+  retOpts: SlotOpt[],
+  reg: RegCarSnap
 ): string {
   const dep = p.requested_departure_slot
     ? depOpts.find((o) => o.value === p.requested_departure_slot)?.label ?? p.requested_departure_slot
@@ -382,10 +402,30 @@ function formatPendingLine(
   const ret = p.requested_return_slot
     ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
     : null;
-  const parts: string[] = [];
-  if (dep) parts.push(`출발 → ${dep}`);
-  if (ret) parts.push(`복귀 → ${ret}`);
-  const req = parts.length ? parts.join(', ') : '변경 없음(사유만)';
+  const busParts: string[] = [];
+  if (dep) busParts.push(`출발 → ${dep}`);
+  if (ret) busParts.push(`복귀 → ${ret}`);
+  const carLine = buildCarChangeSummaryComparedToRegistration(
+    {
+      reason: p.reason,
+      car_role: p.car_role ?? null,
+      car_arrival_time: p.car_arrival_time ?? null,
+      car_departure_time: p.car_departure_time ?? null,
+      car_plate_number: p.car_plate_number ?? null,
+      car_passenger_count: p.car_passenger_count ?? null,
+      car_passenger_names: p.car_passenger_names ?? null
+    },
+    {
+      car_role: reg.carRole,
+      car_arrival_time: reg.carArrivalTime,
+      car_departure_time: reg.carDepartureTime,
+      car_plate_number: reg.carPlateNumber,
+      car_passenger_count: reg.carPassengerCount,
+      car_passenger_names: reg.carPassengerNames
+    }
+  ).trim();
+  const merged = [busParts.join(', '), carLine].filter(Boolean).join(' · ');
+  const req = merged || '변경 없음(사유만)';
   return `처리 대기 중입니다. 요청: ${req}`;
 }
 
@@ -403,8 +443,10 @@ function formatApprovedLine(
   const parts: string[] = [];
   if (dep) parts.push(`출발 ${dep}`);
   if (ret) parts.push(`복귀 ${ret}`);
+  const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
+  if (carLine) parts.push(carLine);
   if (!parts.length) return '최근 요청이 승인되었습니다.';
-  return `최근 요청이 승인되었습니다. 반영된 시간: ${parts.join(' / ')}`;
+  return `최근 요청이 승인되었습니다. 변경: ${parts.join(' · ')}`;
 }
 
 /** 반려 티켓 2번째 줄: `요청: 출발 → …, 복귀 → …` */
@@ -419,10 +461,12 @@ function formatRejectedRequestLine(
   const ret = p.requested_return_slot
     ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
     : null;
-  const parts: string[] = [];
-  if (dep) parts.push(`출발 → ${dep}`);
-  if (ret) parts.push(`복귀 → ${ret}`);
-  const req = parts.length ? parts.join(', ') : '변경 없음(사유만)';
+  const busParts: string[] = [];
+  if (dep) busParts.push(`출발 → ${dep}`);
+  if (ret) busParts.push(`복귀 → ${ret}`);
+  const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
+  const merged = [busParts.join(', '), carLine].filter(Boolean).join(' · ');
+  const req = merged || '변경 없음(사유만)';
   return `요청: ${req}`;
 }
 
@@ -638,7 +682,14 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
           {hasPending && data.pendingRequest ? (
             <>
               <TicketStubText>
-                {formatPendingLine(data.pendingRequest, data.departureOptions, data.returnOptions)}
+                {formatPendingLine(data.pendingRequest, data.departureOptions, data.returnOptions, {
+                  carRole: data.carRole,
+                  carArrivalTime: data.carArrivalTime,
+                  carDepartureTime: data.carDepartureTime,
+                  carPlateNumber: data.carPlateNumber,
+                  carPassengerCount: data.carPassengerCount,
+                  carPassengerNames: data.carPassengerNames
+                })}
               </TicketStubText>
               <TicketStubHint>담당자 확인 후 처리됩니다.</TicketStubHint>
             </>
@@ -762,8 +813,8 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
         </Select>
       </Label>
 
-      {/* 자차 선택 시 세부 정보 입력 */}
-      {isCarMode && canSubmit && (
+      {/* 자차 선택 시 세부 정보 입력 — 이미 자차인 경우에도 시간·역할 수정을 위해 노출 */}
+      {(isCarMode || isCurrentCar) && canSubmit && (
         <>
           <SectionDivider>자차 / 대중교통 정보</SectionDivider>
 
