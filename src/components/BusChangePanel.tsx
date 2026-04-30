@@ -263,11 +263,52 @@ const TicketStubText = styled.p`
   font-weight: 600;
 `;
 
-/** 승인 시 처리 사유와 「변경:」 요약을 한 줄에 탭 간격으로 구분 */
-const ApprovedMemoAndDetailLine = styled.span`
-  display: block;
-  white-space: pre-wrap;
-  tab-size: 8;
+/** 승인 티켓 스텁: 메모 + 변경 내역(블록) — p 안에 div 금지라 승인 분기만 div로 씀 */
+const ApprovedStubRoot = styled.div`
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #203454;
+`;
+
+const ApprovedMemoPrimary = styled.p`
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.55;
+`;
+
+const ApprovedChangeSection = styled.div`
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(53, 84, 139, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+`;
+
+const ApprovedChangeHeading = styled.div`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${HUBUP_BLUE};
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+`;
+
+const ApprovedChangeRow = styled.p`
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #1e3558;
+
+  & + & {
+    margin-top: 4px;
+  }
+`;
+
+const ApprovedStubStack = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
 
 const TicketStubHint = styled.span`
@@ -462,12 +503,20 @@ function labelReturnChoice(value: string | null | undefined, retOpts: SlotOpt[])
   return retOpts.find((o) => o.value === v)?.label ?? v;
 }
 
-/** 승인 티켓: 스냅샷이 있으면 출발·복귀 이전→변경, 자차는 reason 블록 요약 */
-function formatApprovedChangeDetail(
+/** DB 스냅샷 vs 요청 슬롯이 실제로 다른지(둘 다 없음/대시면 동일 취급) */
+function busSlotsDiffer(
+  curRaw: string | null | undefined,
+  reqRaw: string | null | undefined
+): boolean {
+  return normalizeBusSlotDb(curRaw) !== normalizeBusSlotDb(reqRaw);
+}
+
+/** 승인 티켓: 변경 요약을 줄 단위로 (출발/복귀/자차 각각 한 줄씩) */
+function buildApprovedChangeDetailParts(
   p: PendingRow,
   depOpts: SlotOpt[],
   retOpts: SlotOpt[]
-): string {
+): string[] {
   const parts: string[] = [];
 
   const curDep = normalizeBusSlotDb(p.current_departure_slot);
@@ -476,13 +525,17 @@ function formatApprovedChangeDetail(
   const reqRet = normalizeBusSlotDb(p.requested_return_slot);
 
   if (curDep != null) {
-    parts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+    if (busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot)) {
+      parts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+    }
   } else if (reqDep != null) {
     parts.push(`출발 ${labelDepartureChoice(reqDep, depOpts)}`);
   }
 
   if (curRet != null) {
-    parts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+    if (busSlotsDiffer(p.current_return_slot, p.requested_return_slot)) {
+      parts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+    }
   } else if (reqRet != null) {
     parts.push(`복귀 ${labelReturnChoice(reqRet, retOpts)}`);
   }
@@ -490,8 +543,7 @@ function formatApprovedChangeDetail(
   const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
   if (carLine) parts.push(carLine);
 
-  if (!parts.length) return '';
-  return `변경: ${parts.join(' · ')}`;
+  return parts;
 }
 
 /** 반려 티켓 2번째 줄: `요청: 출발 → …, 복귀 → …` */
@@ -507,12 +559,16 @@ function formatRejectedRequestLine(
 
   const busParts: string[] = [];
   if (curDep != null) {
-    busParts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+    if (busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot)) {
+      busParts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+    }
   } else if (reqDep != null) {
     busParts.push(`출발 → ${labelDepartureChoice(reqDep, depOpts)}`);
   }
   if (curRet != null) {
-    busParts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+    if (busSlotsDiffer(p.current_return_slot, p.requested_return_slot)) {
+      busParts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+    }
   } else if (reqRet != null) {
     busParts.push(`복귀 → ${labelReturnChoice(reqRet, retOpts)}`);
   }
@@ -760,27 +816,38 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
             </>
           ) : hasRecentApproved && recentProcessed ? (
             <>
-              <TicketStubText>
+              <ApprovedStubRoot>
                 {(() => {
                   const note = recentProcessed.processed_note?.trim() ?? '';
-                  const detail = formatApprovedChangeDetail(
+                  const lines = buildApprovedChangeDetailParts(
                     recentProcessed,
                     data.departureOptions,
                     data.returnOptions
                   );
-                  if (note && detail) {
+                  const hasLines = lines.length > 0;
+
+                  const changeBlock = hasLines ? (
+                    <ApprovedChangeSection aria-label="변경 내역">
+                      <ApprovedChangeHeading>변경 내역</ApprovedChangeHeading>
+                      {lines.map((line, i) => (
+                        <ApprovedChangeRow key={i}>{line}</ApprovedChangeRow>
+                      ))}
+                    </ApprovedChangeSection>
+                  ) : null;
+
+                  if (note && hasLines) {
                     return (
-                      <ApprovedMemoAndDetailLine>
-                        {note}
-                        {'\t'}
-                        {detail}
-                      </ApprovedMemoAndDetailLine>
+                      <ApprovedStubStack>
+                        <ApprovedMemoPrimary>{note}</ApprovedMemoPrimary>
+                        {changeBlock}
+                      </ApprovedStubStack>
                     );
                   }
-                  if (note) return note;
-                  return detail || '요청이 승인되었습니다.';
+                  if (note) return <ApprovedMemoPrimary>{note}</ApprovedMemoPrimary>;
+                  if (hasLines) return changeBlock;
+                  return <ApprovedMemoPrimary>요청이 승인되었습니다.</ApprovedMemoPrimary>;
                 })()}
-              </TicketStubText>
+              </ApprovedStubRoot>
               <TicketStubHint>승인된 변경 시간이 현재 버스 정보에 반영되어 있습니다.</TicketStubHint>
             </>
           ) : (
