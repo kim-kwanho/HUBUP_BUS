@@ -429,7 +429,8 @@ function formatPendingLine(
   return `처리 대기 중입니다. 요청: ${req}`;
 }
 
-function formatApprovedLine(
+/** 승인 티켓: 관리자 메모가 없을 때만 노출하는 변경 요약 (「변경: …」) */
+function formatApprovedChangeDetail(
   p: PendingRow,
   depOpts: SlotOpt[],
   retOpts: SlotOpt[]
@@ -445,8 +446,8 @@ function formatApprovedLine(
   if (ret) parts.push(`복귀 ${ret}`);
   const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
   if (carLine) parts.push(carLine);
-  if (!parts.length) return '최근 요청이 승인되었습니다.';
-  return `최근 요청이 승인되었습니다. 변경: ${parts.join(' · ')}`;
+  if (!parts.length) return '';
+  return `변경: ${parts.join(' · ')}`;
 }
 
 /** 반려 티켓 2번째 줄: `요청: 출발 → …, 복귀 → …` */
@@ -709,7 +710,16 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
           ) : hasRecentApproved && recentProcessed ? (
             <>
               <TicketStubText>
-                {formatApprovedLine(recentProcessed, data.departureOptions, data.returnOptions)}
+                {(() => {
+                  const note = recentProcessed.processed_note?.trim() ?? '';
+                  const detail = formatApprovedChangeDetail(
+                    recentProcessed,
+                    data.departureOptions,
+                    data.returnOptions
+                  );
+                  if (note) return note;
+                  return detail || '요청이 승인되었습니다.';
+                })()}
               </TicketStubText>
               <TicketStubHint>승인된 변경 시간이 현재 버스 정보에 반영되어 있습니다.</TicketStubHint>
             </>
