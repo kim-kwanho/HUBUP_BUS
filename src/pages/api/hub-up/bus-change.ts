@@ -195,6 +195,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         id: string;
         requested_departure_slot: string | null;
         requested_return_slot: string | null;
+        /** 신청 시점 등록값 스냅샷(변경 전). 없으면 구 스키마·구 데이터 */
+        current_departure_slot?: string | null;
+        current_return_slot?: string | null;
         reason: string;
         status: string;
         created_at: string;
@@ -214,15 +217,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const pendingMin =
         'id, requested_departure_slot, requested_return_slot, reason, status, created_at';
+      const pendingSnap = ', current_departure_slot, current_return_slot';
       const pendingCar =
         ', car_role, car_arrival_time, car_departure_time, car_plate_number, car_passenger_count, car_passenger_names';
 
       let pendingRes = await supabaseAdmin
         .from('hub_up_bus_change_requests')
-        .select(`${pendingMin}${pendingCar}`)
+        .select(`${pendingMin}${pendingSnap}${pendingCar}`)
         .eq('user_id', userId)
         .eq('status', 'pending')
         .maybeSingle();
+
+      if (pendingRes.error && isSelectMissingColumnError(pendingRes.error)) {
+        pendingRes = await supabaseAdmin
+          .from('hub_up_bus_change_requests')
+          .select(`${pendingMin}${pendingCar}`)
+          .eq('user_id', userId)
+          .eq('status', 'pending')
+          .maybeSingle();
+      }
 
       if (pendingRes.error && isSelectMissingColumnError(pendingRes.error)) {
         pendingRes = await supabaseAdmin
@@ -252,18 +265,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }> => {
         const procBase =
           'id, requested_departure_slot, requested_return_slot, reason, status, created_at';
+        const procSnap = ', current_departure_slot, current_return_slot';
         const procNote = ', processed_at, processed_note';
         const procCar =
           ', car_role, car_arrival_time, car_departure_time, car_plate_number, car_passenger_count, car_passenger_names';
 
         let withNote = await supabaseAdmin
           .from('hub_up_bus_change_requests')
-          .select(`${procBase}${procNote}${procCar}`)
+          .select(`${procBase}${procSnap}${procNote}${procCar}`)
           .eq('user_id', userId)
           .in('status', ['approved', 'rejected', 'completed'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        if (withNote.error && isSelectMissingColumnError(withNote.error)) {
+          withNote = await supabaseAdmin
+            .from('hub_up_bus_change_requests')
+            .select(`${procBase}${procNote}${procCar}`)
+            .eq('user_id', userId)
+            .in('status', ['approved', 'rejected', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
 
         if (withNote.error && isSelectMissingColumnError(withNote.error)) {
           withNote = await supabaseAdmin
@@ -289,12 +314,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         let fallback = await supabaseAdmin
           .from('hub_up_bus_change_requests')
-          .select(`${procBase}${procCar}`)
+          .select(`${procBase}${procSnap}${procCar}`)
           .eq('user_id', userId)
           .in('status', ['approved', 'rejected', 'completed'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
+
+        if (fallback.error && isSelectMissingColumnError(fallback.error)) {
+          fallback = await supabaseAdmin
+            .from('hub_up_bus_change_requests')
+            .select(`${procBase}${procCar}`)
+            .eq('user_id', userId)
+            .in('status', ['approved', 'rejected', 'completed'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        }
 
         if (fallback.error && isSelectMissingColumnError(fallback.error)) {
           fallback = await supabaseAdmin

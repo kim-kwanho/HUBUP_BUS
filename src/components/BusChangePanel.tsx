@@ -21,6 +21,9 @@ type PendingRow = {
   id: string;
   requested_departure_slot: string | null;
   requested_return_slot: string | null;
+  /** 신청 시점 등록 스냅샷(API에서 조회 가능할 때만). 없으면 예전 데이터·구 스키마 */
+  current_departure_slot?: string | null;
+  current_return_slot?: string | null;
   reason: string;
   status: string;
   created_at: string;
@@ -436,23 +439,57 @@ function formatPendingLine(
   return `처리 대기 중입니다. 요청: ${req}`;
 }
 
-/** 승인 티켓: 관리자 메모가 없을 때만 노출하는 변경 요약 (「변경: …」) */
+const CAR_SLOT_LABEL = '자차 / 대중교통';
+
+function normalizeBusSlotDb(value: string | null | undefined): string | null {
+  if (value == null || value === '') return null;
+  const t = String(value).trim();
+  if (t === '' || t === '-') return null;
+  return t;
+}
+
+function labelDepartureChoice(value: string | null | undefined, depOpts: SlotOpt[]): string {
+  const v = normalizeBusSlotDb(value);
+  if (!v) return '—';
+  if (v === 'car') return CAR_SLOT_LABEL;
+  return depOpts.find((o) => o.value === v)?.label ?? v;
+}
+
+function labelReturnChoice(value: string | null | undefined, retOpts: SlotOpt[]): string {
+  const v = normalizeBusSlotDb(value);
+  if (!v) return '—';
+  if (v === 'car') return CAR_SLOT_LABEL;
+  return retOpts.find((o) => o.value === v)?.label ?? v;
+}
+
+/** 승인 티켓: 스냅샷이 있으면 출발·복귀 이전→변경, 자차는 reason 블록 요약 */
 function formatApprovedChangeDetail(
   p: PendingRow,
   depOpts: SlotOpt[],
   retOpts: SlotOpt[]
 ): string {
-  const dep = p.requested_departure_slot
-    ? depOpts.find((o) => o.value === p.requested_departure_slot)?.label ?? p.requested_departure_slot
-    : null;
-  const ret = p.requested_return_slot
-    ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
-    : null;
   const parts: string[] = [];
-  if (dep) parts.push(`출발 ${dep}`);
-  if (ret) parts.push(`복귀 ${ret}`);
+
+  const curDep = normalizeBusSlotDb(p.current_departure_slot);
+  const curRet = normalizeBusSlotDb(p.current_return_slot);
+  const reqDep = normalizeBusSlotDb(p.requested_departure_slot);
+  const reqRet = normalizeBusSlotDb(p.requested_return_slot);
+
+  if (curDep != null) {
+    parts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+  } else if (reqDep != null) {
+    parts.push(`출발 ${labelDepartureChoice(reqDep, depOpts)}`);
+  }
+
+  if (curRet != null) {
+    parts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+  } else if (reqRet != null) {
+    parts.push(`복귀 ${labelReturnChoice(reqRet, retOpts)}`);
+  }
+
   const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
   if (carLine) parts.push(carLine);
+
   if (!parts.length) return '';
   return `변경: ${parts.join(' · ')}`;
 }
@@ -463,15 +500,22 @@ function formatRejectedRequestLine(
   depOpts: SlotOpt[],
   retOpts: SlotOpt[]
 ): string {
-  const dep = p.requested_departure_slot
-    ? depOpts.find((o) => o.value === p.requested_departure_slot)?.label ?? p.requested_departure_slot
-    : null;
-  const ret = p.requested_return_slot
-    ? retOpts.find((o) => o.value === p.requested_return_slot)?.label ?? p.requested_return_slot
-    : null;
+  const curDep = normalizeBusSlotDb(p.current_departure_slot);
+  const curRet = normalizeBusSlotDb(p.current_return_slot);
+  const reqDep = normalizeBusSlotDb(p.requested_departure_slot);
+  const reqRet = normalizeBusSlotDb(p.requested_return_slot);
+
   const busParts: string[] = [];
-  if (dep) busParts.push(`출발 → ${dep}`);
-  if (ret) busParts.push(`복귀 → ${ret}`);
+  if (curDep != null) {
+    busParts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
+  } else if (reqDep != null) {
+    busParts.push(`출발 → ${labelDepartureChoice(reqDep, depOpts)}`);
+  }
+  if (curRet != null) {
+    busParts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
+  } else if (reqRet != null) {
+    busParts.push(`복귀 → ${labelReturnChoice(reqRet, retOpts)}`);
+  }
   const carLine = buildCarChangeSummaryFromReasonOnly(p.reason).trim();
   const merged = [busParts.join(', '), carLine].filter(Boolean).join(' · ');
   const req = merged || '변경 없음(사유만)';
