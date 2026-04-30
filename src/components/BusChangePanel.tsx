@@ -525,7 +525,10 @@ function buildApprovedChangeDetailParts(
   const reqRet = normalizeBusSlotDb(p.requested_return_slot);
 
   if (curDep != null) {
-    if (busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot)) {
+    if (
+      busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot) &&
+      normalizeBusSlotDb(p.requested_departure_slot) != null
+    ) {
       parts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
     }
   } else if (reqDep != null) {
@@ -533,7 +536,10 @@ function buildApprovedChangeDetailParts(
   }
 
   if (curRet != null) {
-    if (busSlotsDiffer(p.current_return_slot, p.requested_return_slot)) {
+    if (
+      busSlotsDiffer(p.current_return_slot, p.requested_return_slot) &&
+      normalizeBusSlotDb(p.requested_return_slot) != null
+    ) {
       parts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
     }
   } else if (reqRet != null) {
@@ -559,14 +565,20 @@ function formatRejectedRequestLine(
 
   const busParts: string[] = [];
   if (curDep != null) {
-    if (busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot)) {
+    if (
+      busSlotsDiffer(p.current_departure_slot, p.requested_departure_slot) &&
+      normalizeBusSlotDb(p.requested_departure_slot) != null
+    ) {
       busParts.push(`출발 ${labelDepartureChoice(curDep, depOpts)} → ${labelDepartureChoice(reqDep, depOpts)}`);
     }
   } else if (reqDep != null) {
     busParts.push(`출발 → ${labelDepartureChoice(reqDep, depOpts)}`);
   }
   if (curRet != null) {
-    if (busSlotsDiffer(p.current_return_slot, p.requested_return_slot)) {
+    if (
+      busSlotsDiffer(p.current_return_slot, p.requested_return_slot) &&
+      normalizeBusSlotDb(p.requested_return_slot) != null
+    ) {
       busParts.push(`복귀 ${labelReturnChoice(curRet, retOpts)} → ${labelReturnChoice(reqRet, retOpts)}`);
     }
   } else if (reqRet != null) {
