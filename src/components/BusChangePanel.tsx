@@ -260,6 +260,13 @@ const TicketStubText = styled.p`
   font-weight: 600;
 `;
 
+/** 승인 시 처리 사유와 「변경:」 요약을 한 줄에 탭 간격으로 구분 */
+const ApprovedMemoAndDetailLine = styled.span`
+  display: block;
+  white-space: pre-wrap;
+  tab-size: 8;
+`;
+
 const TicketStubHint = styled.span`
   display: block;
   margin-top: 6px;
@@ -717,6 +724,15 @@ export default function BusChangePanel({ userId, ssoLoading }: Props) {
                     data.departureOptions,
                     data.returnOptions
                   );
+                  if (note && detail) {
+                    return (
+                      <ApprovedMemoAndDetailLine>
+                        {note}
+                        {'\t'}
+                        {detail}
+                      </ApprovedMemoAndDetailLine>
+                    );
+                  }
                   if (note) return note;
                   return detail || '요청이 승인되었습니다.';
                 })()}
