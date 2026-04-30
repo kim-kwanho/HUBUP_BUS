@@ -301,6 +301,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         if (requestedReturn != null) registrationUpdatePayload.return_slot = requestedReturn;
         appendCarFieldsFromRequest(reqRecord, registrationUpdatePayload);
 
+        /** 승인 후 최종 출발/복귀 (요청에 해당 슬롯이 없으면 기존 등록값 유지) */
+        const nextDepartureSlot = requestedDeparture ?? slotValueOrNull(prevReg.departure_slot);
+        const nextReturnSlot = requestedReturn ?? slotValueOrNull(prevReg.return_slot);
+        /** 출발·복귀 중 자차가 아닌 구간은 해당 입소/퇴소 시각을 비움 (자차→버스 등만 반영된 채 구값이 남는 문제 방지) */
+        if (nextDepartureSlot !== 'car') {
+          registrationUpdatePayload.car_arrival_time = null;
+        }
+        if (nextReturnSlot !== 'car') {
+          registrationUpdatePayload.car_departure_time = null;
+        }
+
         if (Object.keys(registrationUpdatePayload).length === 0) {
           return res.status(400).json({
             success: false,
